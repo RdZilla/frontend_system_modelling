@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, {useState, useEffect} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
 import axiosInstance from "../auth/axiosInstance.ts";
 
 interface TaskConfig {
     algorithm: string;
-    generations: number;
+    num_workers: number;
+    chrom_length: number;
     mutation_rate: number;
     crossover_rate: number;
+    selection_rate: number;
+    max_generations: number;
     population_size: number;
     fitness_function: string;
+    mutation_function: string;
+    crossover_function: string;
+    selection_function: string;
+    termination_function: string;
+    initialize_population_function: string;
 }
 
 interface Task {
@@ -36,10 +44,10 @@ interface Experiment {
 }
 
 const ExperimentDetailsPage: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const {id} = useParams<{ id: string }>();
     const [experiment, setExperiment] = useState<Experiment | null>(null);
-    const [newName, setNewName] = useState<string>('');  // Для редактирования имени эксперимента
-    const [isEditing, setIsEditing] = useState<boolean>(false);  // Для контроля режима редактирования
+    const [newName, setNewName] = useState<string>('');
+    const [isEditing, setIsEditing] = useState<boolean>(false);
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
     const navigate = useNavigate();
 
@@ -50,7 +58,7 @@ const ExperimentDetailsPage: React.FC = () => {
                     `http://localhost:8000/api/v1/task_module/experiment/${id}`
                 );
                 setExperiment(response.data);
-                setNewName(response.data.name);  // Изначально имя будет из данных
+                setNewName(response.data.name);
             } catch (error) {
                 console.error('Error fetching experiment details:', error);
             }
@@ -64,17 +72,17 @@ const ExperimentDetailsPage: React.FC = () => {
             await axiosInstance.get(
                 `http://localhost:8000/api/v1/task_module/task/${taskId}/start`
             );
-            setNotification({ message: 'Задача успешно запущена!', type: 'success' });
+            setNotification({message: 'Задача успешно запущена!', type: 'success'});
             setExperiment(prev => prev ? {
                 ...prev,
                 tasks: prev.tasks.map(task =>
-                    task.id === taskId ? { ...task, status: 'started' } : task
+                    task.id === taskId ? {...task, status: 'started'} : task
                 )
-            } : prev);  // Обновляем статус задачи
+            } : prev);
         } catch (error: any) {
             console.error('Error starting task:', error);
             const errorMessage = `Не удалось запустить задачу: ${error.response?.data?.detail}` || 'Не удалось запустить задачу.';
-            setNotification({ message: errorMessage, type: 'error' });
+            setNotification({message: errorMessage, type: 'error'});
         }
     };
 
@@ -83,37 +91,37 @@ const ExperimentDetailsPage: React.FC = () => {
             await axiosInstance.get(
                 `http://localhost:8000/api/v1/task_module/task/${taskId}/stop`
             );
-            setNotification({ message: 'Задача успешно остановлена!', type: 'success' });
+            setNotification({message: 'Задача успешно остановлена!', type: 'success'});
             setExperiment(prev => prev ? {
                 ...prev,
                 tasks: prev.tasks.map(task =>
-                    task.id === taskId ? { ...task, status: 'stopped' } : task
+                    task.id === taskId ? {...task, status: 'stopped'} : task
                 )
-            } : prev);  // Обновляем статус задачи
+            } : prev);
         } catch (error: any) {
             console.error('Error stopping task:', error);
             const errorMessage = `Не удалось остановить задачу: ${error.response?.data?.detail}` || 'Не удалось остановить задачу.';
-            setNotification({ message: errorMessage, type: 'error' });
+            setNotification({message: errorMessage, type: 'error'});
         }
     };
 
     const updateExperimentName = async () => {
         if (!newName) {
-            setNotification({ message: 'Имя не может быть пустым.', type: 'error' });
+            setNotification({message: 'Имя не может быть пустым.', type: 'error'});
             return;
         }
         try {
             await axiosInstance.patch(
                 `http://localhost:8000/api/v1/task_module/experiment/${id}`,
-                { name: newName }
+                {name: newName}
             );
-            setExperiment(prev => prev ? { ...prev, name: newName } : prev);  // Обновляем имя в текущем состоянии
-            setIsEditing(false);  // Выход из режима редактирования
-            setNotification({ message: 'Имя эксперимента успешно обновлено!', type: 'success' });
+            setExperiment(prev => prev ? {...prev, name: newName} : prev);
+            setIsEditing(false);
+            setNotification({message: 'Имя эксперимента успешно обновлено!', type: 'success'});
         } catch (error: any) {
             console.error('Error updating experiment name:', error);
             const errorMessage = `Не удалось обновить имя эксперимента: ${error.response?.data?.detail}` || 'Не удалось обновить имя эксперимента.';
-            setNotification({ message: errorMessage, type: 'error' });
+            setNotification({message: errorMessage, type: 'error'});
         }
     };
 
@@ -122,12 +130,12 @@ const ExperimentDetailsPage: React.FC = () => {
             await axiosInstance.delete(
                 `http://localhost:8000/api/v1/task_module/experiment/${id}`
             );
-            setNotification({ message: 'Эксперимент успешно удален!', type: 'success' });
-            navigate('/experiment');  // Перенаправляем на страницу со списком экспериментов
+            setNotification({message: 'Эксперимент успешно удален!', type: 'success'});
+            navigate('/experiment');
         } catch (error: any) {
             console.error('Error deleting experiment:', error);
             const errorMessage = `Не удалось удалить эксперимент: ${error.response?.data?.detail}` || 'Не удалось удалить эксперимент.';
-            setNotification({ message: errorMessage, type: 'error' });
+            setNotification({message: errorMessage, type: 'error'});
         }
     };
 
@@ -159,7 +167,6 @@ const ExperimentDetailsPage: React.FC = () => {
             <p className="text-gray-500">Создан: {new Date(experiment.created_at).toLocaleString()}</p>
             <p className="text-gray-400">Обновлен: {new Date(experiment.updated_at).toLocaleString()}</p>
 
-            {/* Уведомление */}
             {notification && (
                 <div
                     className={`fixed top-4 right-4 p-4 rounded-lg text-white ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
@@ -169,7 +176,6 @@ const ExperimentDetailsPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Кнопки управления экспериментом */}
             <div className="mt-4">
                 <button
                     onClick={startTask}
@@ -193,7 +199,6 @@ const ExperimentDetailsPage: React.FC = () => {
                 </button>
             </div>
 
-            {/* Режим редактирования имени */}
             {isEditing && (
                 <div className="mt-4">
                     <input
@@ -213,38 +218,47 @@ const ExperimentDetailsPage: React.FC = () => {
 
             <div className="mt-4">
                 <h3 className="text-xl font-semibold">Задачи</h3>
-                <ul className="space-y-2">
+                <div className="grid grid-cols-2 gap-4">
                     {experiment.tasks.map((task) => (
-                        <li key={task.id} className="border p-2 rounded-lg">
+                        <div key={task.id} className="border p-4 rounded-lg shadow-lg">
                             <h4 className="font-semibold">Задача ID: {task.id}</h4>
-                            <p className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>
-                                {task.status}
-                            </p>
-                            <pre className="bg-gray-100 p-2 rounded">
-                                {JSON.stringify(task.config.config, null, 2)}
-                            </pre>
+                            <p className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{task.status}</p>
 
-                            {/* Кнопки для задач */}
-                            {task.status === 'created' || task.status === 'stopped' || task.status === 'error' ? (
-                                <button
-                                    onClick={() => startTask(task.id)}
-                                    className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
-                                >
-                                    Запустить задачу
-                                </button>
-                            ) : null}
+                            <div className="mt-5">
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.entries(task.config.config).map(([key, value]) => (
+                                        <div key={key} className="flex justify-between">
+                                            <span className="font-semibold">{key.replace('_', ' ').toUpperCase()}</span>
+                                            <span>{value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
-                            {task.status === 'started' ? (
-                                <button
-                                    onClick={() => stopTask(task.id)}
-                                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
-                                >
-                                    Остановить задачу
-                                </button>
-                            ) : null}
-                        </li>
+                            <div className="mt-5">
+                                {task.status === 'created' || task.status === 'stopped' || task.status === 'error' ? (
+                                    <button
+                                        onClick={() => startTask(task.id)}
+                                        className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-4"
+                                    >
+                                        Запустить задачу
+                                    </button>
+                                ) : null}
+                            </div>
+
+                            <div className="mt-5">
+                                {task.status === 'started' ? (
+                                    <button
+                                        onClick={() => stopTask(task.id)}
+                                        className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                                    >
+                                        Остановить задачу
+                                    </button>
+                                ) : null}
+                            </div>
+                        </div>
                     ))}
-                </ul>
+                </div>
             </div>
         </div>
     );
