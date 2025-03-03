@@ -58,7 +58,21 @@ const ExperimentsList: React.FC = () => {
 
     const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
     const [expandedExperiments, setExpandedExperiments] = useState<Set<number>>(new Set());
+    const [selectAll, setSelectAll] = useState(false);
+
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilters, setStatusFilters] = useState({
+        experimentStatus: new Set<string>(),
+        taskStatus: new Set<string>(),
+    });
+    const [dateFilters, setDateFilters] = useState({
+        createdFrom: '',
+        createdTo: '',
+        updatedFrom: '',
+        updatedTo: '',
+    });
+    const [configIds, setConfigIds] = useState<string>('');
+
     const [selectedExperiments, setSelectedExperiments] = useState<Set<number>>(new Set());
 
     const fetchExperiments = async (page: number, page_size: number, filters: any) => {
@@ -131,6 +145,14 @@ const ExperimentsList: React.FC = () => {
         });
     };
 
+    const toggleSelectAllExperiments = () => {
+        setSelectAll((prevSelectAll) => {
+            const newSelectAll = !prevSelectAll;
+            setSelectedExperiments(newSelectAll ? new Set(experiments.map(experiment => experiment.id)) : new Set());
+            return newSelectAll;
+        });
+    };
+
     const toggleExperimentSelection = (experimentId: number) => {
         setSelectedExperiments((prev) => {
             const newSelected = new Set(prev);
@@ -140,6 +162,18 @@ const ExperimentsList: React.FC = () => {
                 newSelected.add(experimentId);
             }
             return newSelected;
+        });
+    };
+
+    const handleStatusChange = (filterType: 'experimentStatus' | 'taskStatus', status: string) => {
+        setStatusFilters((prev) => {
+            const updatedFilter = new Set(prev[filterType]);
+            if (updatedFilter.has(status)) {
+                updatedFilter.delete(status); // Удаляем статус, если он уже выбран
+            } else {
+                updatedFilter.add(status); // Добавляем статус, если его еще нет
+            }
+            return { ...prev, [filterType]: updatedFilter };
         });
     };
 
@@ -162,6 +196,66 @@ const ExperimentsList: React.FC = () => {
 
     const totalPages = Math.ceil(pagination.total / pagination.page_size);
 
+
+    const handleResetFilters = () => {
+        // Очистка текстового поиска
+        setSearchQuery('');
+
+        // Очистка чекбоксов статусов
+        setStatusFilters({
+            experimentStatus: new Set(),
+            taskStatus: new Set(),
+        });
+
+        // Очистка дат
+        setDateFilters({
+            createdFrom: '',
+            createdTo: '',
+            updatedFrom: '',
+            updatedTo: '',
+        });
+
+        // Очистка ID конфигурации
+        setConfigIds('');
+
+        // Выполнение запроса с очищенными фильтрами
+        fetchExperiments(pagination.page, pagination.page_size, {});
+    };
+
+    const applyFilters = async () => {
+        const filters = {
+            search: searchQuery,
+            experimentStatus: Array.from(statusFilters.experimentStatus),
+            taskStatus: Array.from(statusFilters.taskStatus),
+            createdFrom: dateFilters.createdFrom,
+            createdTo: dateFilters.createdTo,
+            updatedFrom: dateFilters.updatedFrom,
+            updatedTo: dateFilters.updatedTo,
+            configIds: configIds.split(',').map(id => id.trim()),
+        };
+
+        // Выполняем запрос с фильтрами
+        fetchExperiments(pagination.page, pagination.page_size, filters);
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'created':
+                return 'bg-gray-300';
+            case 'started':
+                return 'bg-green-500';
+            case 'finished':
+                return 'bg-blue-500';
+            case 'stopped':
+                return 'bg-red-500';
+            case 'error':
+                return 'bg-orange-500';
+            default:
+                return 'bg-gray-300';
+        }
+    };
+
+
     return (
         <div className="container mx-auto p-4">
             <div className="flex justify-between mb-4">
@@ -179,20 +273,30 @@ const ExperimentsList: React.FC = () => {
                         Множественный запуск
                     </button>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={handleSearchChange}
-                        placeholder="Поиск"
-                        className="border p-2 rounded mt-2"
-                    />
-                </div>
+            </div>
+
+            <div className="flex items-center space-x-2 w-full">
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    placeholder="Поиск"
+                    className="border p-2 rounded mb-2 mt-2 w-full"
+                />
             </div>
 
             <div className="flex space-x-4">
                 <div className="flex-1">
-                    <h1 className="text-2xl font-bold mb-4">Список Экспериментов</h1>
+                    <h1 className="text-2xl font-bold mb-2">Список эпериментов</h1>
+                    <div className="flex items-center mx-1">
+                        <input
+                            type="checkbox"
+                            checked={selectAll}
+                            onChange={toggleSelectAllExperiments}
+                            className="mr-2"
+                        />
+                        <span>Выбрать все</span>
+                    </div>
                     <div className="space-y-4">
                         {experiments.map((experiment) => (
                             <div key={experiment.id} className="border p-4 rounded-lg shadow-md">
@@ -223,7 +327,7 @@ const ExperimentsList: React.FC = () => {
 
                                 {expandedExperiments.has(experiment.id) && (
                                     <div className="mt-2">
-                                        <p className="text-gray-500">Статус: {experiment.status}</p>
+                                        <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {experiment.status}</p>
                                         <p className="text-gray-400">Создан: {new Date(experiment.created_at).toLocaleString()}</p>
                                     </div>
                                 )}
@@ -236,7 +340,7 @@ const ExperimentsList: React.FC = () => {
                                                 <li key={task.id} className="border p-2 rounded-lg">
                                                     <div className="flex justify-between">
                                                         <span>Задача ID: {task.id}</span>
-                                                        <span className="text-gray-500">{task.status}</span>
+                                                        <span className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{task.status}</span>
                                                         <button
                                                             onClick={() => toggleTaskExpansion(task.id)}
                                                             className="text-blue-500"
@@ -247,7 +351,8 @@ const ExperimentsList: React.FC = () => {
 
                                                     {expandedTasks.has(task.id) && (
                                                         <div className="mt-2">
-                                                            <h4 className="text-lg font-semibold">Конфигурация задачи:</h4>
+                                                            <h4 className="text-lg font-semibold">Конфигурация
+                                                                задачи:</h4>
                                                             <pre className="bg-gray-100 p-2 rounded">
                                                                 {JSON.stringify(task.config.config, null, 2)}
                                                             </pre>
@@ -263,15 +368,21 @@ const ExperimentsList: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="w-1/4 ml-4">
-                    <h2 className="text-xl font-semibold mb-4">Фильтры</h2>
-                    <div className="space-y-4">
+                <div className="w-1/4 ml-8">
+                    <h2 className="text-xl font-semibold mt-4 mb-4 ml-4">Фильтры</h2>
+                    <div className="space-y-4 ml-4">
                         <div>
-                            <h3 className="font-semibold">Статус эксперимента</h3>
+                            <h3 className="font-semibold" >Статус эксперимента</h3>
                             <div className="space-y-2">
                                 {['created', 'updated', 'started', 'finished', 'stopped', 'error'].map(status => (
                                     <label key={status} className="flex items-center">
-                                        <input type="checkbox" value={status} className="mr-2" />
+                                        <input
+                                            type="checkbox"
+                                            value={status}
+                                            checked={statusFilters.experimentStatus.has(status)}
+                                            onChange={() => handleStatusChange('experimentStatus', status)}
+                                            className="mr-2"
+                                        />
                                         {status}
                                     </label>
                                 ))}
@@ -280,14 +391,34 @@ const ExperimentsList: React.FC = () => {
 
                         <div>
                             <h3 className="font-semibold">Дата создания</h3>
-                            <input type="date" className="border p-2 rounded mb-2 w-full" />
-                            <input type="date" className="border p-2 rounded w-full" />
+                            <input
+                                type="date"
+                                className="border p-2 rounded mb-2 w-full"
+                                value={dateFilters.createdFrom}
+                                onChange={(e) => setDateFilters({...dateFilters, createdFrom: e.target.value})}
+                            />
+                            <input
+                                type="date"
+                                className="border p-2 rounded w-full"
+                                value={dateFilters.createdTo}
+                                onChange={(e) => setDateFilters({...dateFilters, createdTo: e.target.value})}
+                            />
                         </div>
 
                         <div>
                             <h3 className="font-semibold">Дата обновления</h3>
-                            <input type="date" className="border p-2 rounded mb-2 w-full" />
-                            <input type="date" className="border p-2 rounded w-full" />
+                            <input
+                                type="date"
+                                className="border p-2 rounded mb-2 w-full"
+                                value={dateFilters.updatedFrom}
+                                onChange={(e) => setDateFilters({...dateFilters, updatedFrom: e.target.value})}
+                            />
+                            <input
+                                type="date"
+                                className="border p-2 rounded w-full"
+                                value={dateFilters.updatedTo}
+                                onChange={(e) => setDateFilters({...dateFilters, updatedTo: e.target.value})}
+                            />
                         </div>
 
                         <div>
@@ -295,7 +426,12 @@ const ExperimentsList: React.FC = () => {
                             <div className="space-y-2">
                                 {['created', 'started', 'finished', 'stopped', 'error'].map(status => (
                                     <label key={status} className="flex items-center">
-                                        <input type="checkbox" value={status} className="mr-2" />
+                                        <input
+                                            type="checkbox"
+                                            value={status}
+                                            checked={statusFilters.taskStatus.has(status)}
+                                            onChange={() => handleStatusChange('taskStatus', status)}
+                                            className="mr-2"/>
                                         {status}
                                     </label>
                                 ))}
@@ -304,10 +440,25 @@ const ExperimentsList: React.FC = () => {
 
                         <div>
                             <h3 className="font-semibold">ID конфигурации</h3>
-                            <input type="text" className="border p-2 rounded w-full" />
+                            <input
+                                type="text"
+                                className="border p-2 rounded w-full"
+                                value={configIds}
+                                onChange={(e) => setConfigIds(e.target.value)}
+                            />
                         </div>
 
-                        <button className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 w-full">Применить</button>
+                        <button
+                            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 w-full"
+                            onClick={applyFilters}
+                        >Применить
+                        </button>
+                        <button
+                            onClick={handleResetFilters}
+                            className="bg-red-500 text-white p-2 rounded hover:bg-red-600 w-full"
+                        >
+                            Сбросить фильтры
+                        </button>
                     </div>
                 </div>
             </div>
