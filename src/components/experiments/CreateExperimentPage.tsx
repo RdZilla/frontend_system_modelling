@@ -124,32 +124,32 @@ const CreateExperimentPage: React.FC = () => {
                                         {
                                             field: 'crossover_function',
                                             label: 'Функция кроссовера',
-                                            options: options.crossover_functions
+                                            options: Object.keys(options.crossover_functions)
                                         },
                                         {
                                             field: 'fitness_function',
                                             label: 'Фитнес-функция',
-                                            options: options.fitness_functions
+                                            options: Object.keys(options.fitness_functions)
                                         },
                                         {
                                             field: 'initialize_population_function',
                                             label: 'Функция инициализации',
-                                            options: options.init_population_functions
+                                            options: Object.keys(options.init_population_functions)
                                         },
                                         {
                                             field: 'mutation_function',
                                             label: 'Функция мутации',
-                                            options: options.mutation_functions
+                                            options: Object.keys(options.mutation_functions)
                                         },
                                         {
                                             field: 'selection_function',
                                             label: 'Функция селекции',
-                                            options: options.selection_functions
+                                            options: Object.keys(options.selection_functions)
                                         },
                                         {
                                             field: 'termination_function',
                                             label: 'Функция завершения',
-                                            options: options.termination_functions
+                                            options: Object.keys(options.termination_functions)
                                         },
                                     ].map(({field, label, options}) => (
                                         <div key={field} className="mb-4">
