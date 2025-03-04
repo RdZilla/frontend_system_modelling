@@ -1,15 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axiosInstance from "../auth/axiosInstance.ts";
-import { Link } from "react-router-dom";
+import {Link} from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface TaskConfig {
     algorithm: string;
-    generations: number;
+    num_workers: number;
+    chrom_length: number;
     mutation_rate: number;
     crossover_rate: number;
+    selection_rate: number;
+    max_generations: number;
     population_size: number;
     fitness_function: string;
+    mutation_function: string;
+    crossover_function: string;
+    selection_function: string;
+    termination_function: string;
+    initialize_population_function: string;
 }
+
 
 interface Task {
     id: number;
@@ -74,6 +85,19 @@ const ExperimentsList: React.FC = () => {
     const [configIds, setConfigIds] = useState<string>('');
 
     const [selectedExperiments, setSelectedExperiments] = useState<Set<number>>(new Set());
+    const [isExpandedAll, setIsExpandedAll] = useState(false); // Флаг для отслеживания состояния (все ли развернуты)
+
+
+    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+    const showNotification = (message: string, type: 'success' | 'error') => {
+        setNotification({ message, type });
+
+        // Автоматическое скрытие уведомления через 5 секунд
+        setTimeout(() => {
+            setNotification(null);
+        }, 5000);
+    };
 
     const fetchExperiments = async (page: number, page_size: number, filters: any) => {
         try {
@@ -84,8 +108,8 @@ const ExperimentsList: React.FC = () => {
             };
 
             const response = await axiosInstance.get<PaginatedResponse>(
-                `http://localhost:8000/api/v1/task_module/experiment`,
-                { params }
+                `${API_URL}/task_module/experiment`,
+                {params}
             );
 
             setExperiments(response.data.results);
@@ -96,13 +120,15 @@ const ExperimentsList: React.FC = () => {
                 next: response.data.links.next,
                 previous: response.data.links.previous,
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching experiments:', error);
+            const errorMessage = `Ошибка при загрузке: ${error.response?.data?.detail}` || 'Ошибка при загрузке.';
+            showNotification(errorMessage, "error")
         }
     };
 
     useEffect(() => {
-        fetchExperiments(pagination.page, pagination.page_size, { search: searchQuery });
+        fetchExperiments(pagination.page, pagination.page_size, {search: searchQuery});
     }, [pagination.page, pagination.page_size, searchQuery]);
 
     const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -117,7 +143,7 @@ const ExperimentsList: React.FC = () => {
     const handlePageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const page = parseInt(event.target.value, 10);
         if (page >= 1 && page <= Math.ceil(pagination.total / pagination.page_size)) {
-            setPagination((prev) => ({ ...prev, page }));
+            setPagination((prev) => ({...prev, page}));
         }
     };
 
@@ -173,7 +199,7 @@ const ExperimentsList: React.FC = () => {
             } else {
                 updatedFilter.add(status); // Добавляем статус, если его еще нет
             }
-            return { ...prev, [filterType]: updatedFilter };
+            return {...prev, [filterType]: updatedFilter};
         });
     };
 
@@ -185,12 +211,14 @@ const ExperimentsList: React.FC = () => {
         try {
             const selectedIds = Array.from(selectedExperiments);
             const response = await axiosInstance.post(
-                'http://localhost:8000/api/v1/task_module/multiple_launch',
-                { experiment_ids: selectedIds }
+                `${API_URL}/task_module/multiple_launch`,
+                {experiment_ids: selectedIds}
             );
             console.log(response.data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error during multiple launch:', error);
+            const errorMessage = `Ошибка при групповом запуске: ${error.response?.data?.detail}` || 'Ошибка при групповом запуске.';
+            showNotification(errorMessage, 'error');
         }
     };
 
@@ -255,9 +283,36 @@ const ExperimentsList: React.FC = () => {
         }
     };
 
+    const toggleExpandCollapseAll = () => {
+        if (isExpandedAll) {
+            // Если все развернуты, сворачиваем их
+            setExpandedExperiments(new Set());
+        } else {
+            // Если не все развернуты, разворачиваем все
+            setExpandedExperiments(new Set(experiments.map(experiment => experiment.id)));
+        }
+        setIsExpandedAll(prevState => !prevState); // Переключаем флаг
+    };
+
 
     return (
         <div className="container mx-auto p-4">
+            {notification && (
+                <div
+                    className={`fixed top-4 right-4 p-4 rounded-lg text-white flex items-center justify-between shadow-lg transition-opacity duration-300 ${
+                        notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                    role="alert"
+                >
+                    <span>{notification.message}</span>
+                    <button
+                        className="ml-4 text-white hover:text-black"
+                        onClick={() => setNotification(null)}  // Закрыть уведомление по клику
+                    >
+                        ✖
+                    </button>
+                </div>
+            )}
             <div className="flex justify-between mb-4">
                 <div className="flex space-x-4">
                     <Link
@@ -286,9 +341,20 @@ const ExperimentsList: React.FC = () => {
             </div>
 
             <div className="flex space-x-4">
-                <div className="flex-1">
-                    <h1 className="text-2xl font-bold mb-2">Список эпериментов</h1>
-                    <div className="flex items-center mx-1">
+                <div className="flex-1 ">
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-2xl font-bold mb-2">Список эпериментов</h1>
+
+                        <button
+                            onClick={toggleExpandCollapseAll}
+                            className={`p-2 rounded mr-4 mt-2 ${
+                                isExpandedAll ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'
+                            } text-white`}
+                        >
+                            {isExpandedAll ? 'Свернуть все' : 'Развернуть все'}
+                        </button>
+                    </div>
+                    <div className="flex items-center mx-1 mb-2">
                         <input
                             type="checkbox"
                             checked={selectAll}
@@ -340,7 +406,8 @@ const ExperimentsList: React.FC = () => {
                                                 <li key={task.id} className="border p-2 rounded-lg">
                                                     <div className="flex justify-between">
                                                         <span>Задача ID: {task.id}</span>
-                                                        <span className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{task.status}</span>
+                                                        <span
+                                                            className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{task.status}</span>
                                                         <button
                                                             onClick={() => toggleTaskExpansion(task.id)}
                                                             className="text-blue-500"
@@ -351,11 +418,17 @@ const ExperimentsList: React.FC = () => {
 
                                                     {expandedTasks.has(task.id) && (
                                                         <div className="mt-2">
-                                                            <h4 className="text-lg font-semibold">Конфигурация
+                                                            <h4 className="text-lg font-semibold mb-8">Конфигурация
                                                                 задачи:</h4>
-                                                            <pre className="bg-gray-100 p-2 rounded">
-                                                                {JSON.stringify(task.config.config, null, 2)}
-                                                            </pre>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                {Object.entries(task.config.config).map(([key, value]) => (
+                                                                    <div key={key} className="flex justify-between">
+                                                                        <span
+                                                                            className="font-semibold">{key.replace('_', ' ').toUpperCase()}</span>
+                                                                        <span>{value}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </li>
@@ -372,7 +445,7 @@ const ExperimentsList: React.FC = () => {
                     <h2 className="text-xl font-semibold mt-4 mb-4 ml-4">Фильтры</h2>
                     <div className="space-y-4 ml-4">
                         <div>
-                            <h3 className="font-semibold" >Статус эксперимента</h3>
+                            <h3 className="font-semibold">Статус эксперимента</h3>
                             <div className="space-y-2">
                                 {['created', 'updated', 'started', 'finished', 'stopped', 'error'].map(status => (
                                     <label key={status} className="flex items-center">

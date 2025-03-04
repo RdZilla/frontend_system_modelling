@@ -2,6 +2,8 @@ import React, {useState, useEffect} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import axiosInstance from "../auth/axiosInstance.ts";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface TaskConfig {
     algorithm: string;
     num_workers: number;
@@ -49,13 +51,23 @@ const ExperimentDetailsPage: React.FC = () => {
     const [newName, setNewName] = useState<string>('');
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+    const showNotification = (message: string, type: 'success' | 'error') => {
+        setNotification({ message, type });
+
+        // Автоматическое скрытие уведомления через 5 секунд
+        setTimeout(() => {
+            setNotification(null);
+        }, 5000);
+    };
+
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchExperimentDetails = async () => {
             try {
                 const response = await axiosInstance.get<Experiment>(
-                    `http://localhost:8000/api/v1/task_module/experiment/${id}`
+                    `${API_URL}/task_module/experiment/${id}`
                 );
                 setExperiment(response.data);
                 setNewName(response.data.name);
@@ -70,9 +82,9 @@ const ExperimentDetailsPage: React.FC = () => {
     const startTask = async (taskId: number) => {
         try {
             await axiosInstance.get(
-                `http://localhost:8000/api/v1/task_module/task/${taskId}/start`
+                `${API_URL}/task_module/task/${taskId}/start`
             );
-            setNotification({message: 'Задача успешно запущена!', type: 'success'});
+            showNotification('Задача успешно запущена!', 'success');
             setExperiment(prev => prev ? {
                 ...prev,
                 tasks: prev.tasks.map(task =>
@@ -82,16 +94,16 @@ const ExperimentDetailsPage: React.FC = () => {
         } catch (error: any) {
             console.error('Error starting task:', error);
             const errorMessage = `Не удалось запустить задачу: ${error.response?.data?.detail}` || 'Не удалось запустить задачу.';
-            setNotification({message: errorMessage, type: 'error'});
+            showNotification(errorMessage, "error")
         }
     };
 
     const stopTask = async (taskId: number) => {
         try {
             await axiosInstance.get(
-                `http://localhost:8000/api/v1/task_module/task/${taskId}/stop`
+                `${API_URL}/task_module/task/${taskId}/stop`
             );
-            setNotification({message: 'Задача успешно остановлена!', type: 'success'});
+            showNotification('Задача успешно остановлена!', 'success');
             setExperiment(prev => prev ? {
                 ...prev,
                 tasks: prev.tasks.map(task =>
@@ -101,43 +113,47 @@ const ExperimentDetailsPage: React.FC = () => {
         } catch (error: any) {
             console.error('Error stopping task:', error);
             const errorMessage = `Не удалось остановить задачу: ${error.response?.data?.detail}` || 'Не удалось остановить задачу.';
-            setNotification({message: errorMessage, type: 'error'});
+            showNotification(errorMessage, "error")
         }
     };
 
     const updateExperimentName = async () => {
         if (!newName) {
-            setNotification({message: 'Имя не может быть пустым.', type: 'error'});
+            showNotification("Имя не может быть пустым", "error")
             return;
         }
         try {
             await axiosInstance.patch(
-                `http://localhost:8000/api/v1/task_module/experiment/${id}`,
+                `${API_URL}/task_module/experiment/${id}`,
                 {name: newName}
             );
             setExperiment(prev => prev ? {...prev, name: newName} : prev);
             setIsEditing(false);
-            setNotification({message: 'Имя эксперимента успешно обновлено!', type: 'success'});
+            showNotification('Имя эксперимента успешно обновлено!', 'success');
         } catch (error: any) {
             console.error('Error updating experiment name:', error);
             const errorMessage = `Не удалось обновить имя эксперимента: ${error.response?.data?.detail}` || 'Не удалось обновить имя эксперимента.';
-            setNotification({message: errorMessage, type: 'error'});
+            showNotification(errorMessage, "error")
         }
     };
 
     const deleteExperiment = async () => {
         try {
             await axiosInstance.delete(
-                `http://localhost:8000/api/v1/task_module/experiment/${id}`
+                `${API_URL}/task_module/experiment/${id}`
             );
-            setNotification({message: 'Эксперимент успешно удален!', type: 'success'});
+            showNotification('Эксперимент успешно удален!', 'success');
             navigate('/experiment');
         } catch (error: any) {
             console.error('Error deleting experiment:', error);
             const errorMessage = `Не удалось удалить эксперимент: ${error.response?.data?.detail}` || 'Не удалось удалить эксперимент.';
-            setNotification({message: errorMessage, type: 'error'});
+            showNotification(errorMessage, "error")
         }
     };
+
+    const goBack = async () => {
+        navigate('/experiment')
+    }
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -163,16 +179,24 @@ const ExperimentDetailsPage: React.FC = () => {
     return (
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">{experiment.name}</h1>
-            <p className="text-lg mb-2">Статус: {experiment.status}</p>
+            <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {experiment.status}</p>
             <p className="text-gray-500">Создан: {new Date(experiment.created_at).toLocaleString()}</p>
             <p className="text-gray-400">Обновлен: {new Date(experiment.updated_at).toLocaleString()}</p>
 
             {notification && (
                 <div
-                    className={`fixed top-4 right-4 p-4 rounded-lg text-white ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
+                    className={`fixed top-4 right-4 p-4 rounded-lg text-white flex items-center justify-between shadow-lg transition-opacity duration-300 ${
+                        notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                    }`}
                     role="alert"
                 >
-                    {notification.message}
+                    <span>{notification.message}</span>
+                    <button
+                        className="ml-4 text-white hover:text-black"
+                        onClick={() => setNotification(null)}  // Закрыть уведомление по клику
+                    >
+                        ✖
+                    </button>
                 </div>
             )}
 
@@ -193,9 +217,16 @@ const ExperimentDetailsPage: React.FC = () => {
 
                 <button
                     onClick={deleteExperiment}
-                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mr-4"
                 >
                     Удалить эксперимент
+                </button>
+
+                <button
+                    onClick={goBack}
+                    className="p-2 rounded bg-gray-500 hover:bg-gray-600 text-white"
+                >
+                    Назад
                 </button>
             </div>
 

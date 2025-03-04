@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axiosInstance from "../auth/axiosInstance.ts";
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const CreateExperimentPage: React.FC = () => {
     const [name, setName] = useState('');
@@ -12,7 +14,7 @@ const CreateExperimentPage: React.FC = () => {
     useEffect(() => {
         const fetchOptions = async () => {
             try {
-                const response = await axiosInstance.get('http://localhost:8000/api/v1/task_module/math_function');
+                const response = await axiosInstance.get(`${API_URL}/task_module/math_function`);
                 setOptions(response.data.detail);
             } catch (err) {
                 console.error("Ошибка при загрузке данных:", err);
@@ -29,7 +31,7 @@ const CreateExperimentPage: React.FC = () => {
             return;
         }
         try {
-            const response = await axiosInstance.post('http://localhost:8000/api/v1/task_module/experiment', {
+            const response = await axiosInstance.post(`${API_URL}/task_module/experiment`, {
                 name,
                 configs,
             });
@@ -118,14 +120,38 @@ const CreateExperimentPage: React.FC = () => {
                                 <>
                                     {/* Выпадающие списки и их подписи */}
                                     {[
-                                        { field: 'algorithm', label: 'Алгоритм', options: options.supported_models },
-                                        { field: 'crossover_function', label: 'Функция кроссовера', options: options.crossover_functions },
-                                        { field: 'fitness_function', label: 'Фитнес-функция', options: options.fitness_functions },
-                                        { field: 'initialize_population_function', label: 'Функция инициализации', options: options.init_population_functions },
-                                        { field: 'mutation_function', label: 'Функция мутации', options: options.mutation_functions },
-                                        { field: 'selection_function', label: 'Функция селекции', options: options.selection_functions },
-                                        { field: 'termination_function', label: 'Функция завершения', options: options.termination_functions },
-                                    ].map(({ field, label, options }) => (
+                                        {field: 'algorithm', label: 'Алгоритм', options: options.supported_models},
+                                        {
+                                            field: 'crossover_function',
+                                            label: 'Функция кроссовера',
+                                            options: options.crossover_functions
+                                        },
+                                        {
+                                            field: 'fitness_function',
+                                            label: 'Фитнес-функция',
+                                            options: options.fitness_functions
+                                        },
+                                        {
+                                            field: 'initialize_population_function',
+                                            label: 'Функция инициализации',
+                                            options: options.init_population_functions
+                                        },
+                                        {
+                                            field: 'mutation_function',
+                                            label: 'Функция мутации',
+                                            options: options.mutation_functions
+                                        },
+                                        {
+                                            field: 'selection_function',
+                                            label: 'Функция селекции',
+                                            options: options.selection_functions
+                                        },
+                                        {
+                                            field: 'termination_function',
+                                            label: 'Функция завершения',
+                                            options: options.termination_functions
+                                        },
+                                    ].map(({field, label, options}) => (
                                         <div key={field} className="mb-4">
                                             <label className="block text-sm mb-1">{label}</label>
                                             <select
@@ -143,14 +169,14 @@ const CreateExperimentPage: React.FC = () => {
 
                                     {/* Числовые поля под соответствующими выпадающими списками */}
                                     {[
-                                        { field: 'population_size', label: 'Размер популяции' },
-                                        { field: 'chrom_length', label: 'Длина хромосомы' },
-                                        { field: 'max_generations', label: 'Максимум поколений' },
-                                        { field: 'mutation_rate', label: 'Шанс мутации', step: 0.01 },
-                                        { field: 'crossover_rate', label: 'Шанс кроссовера', step: 0.01 },
-                                        { field: 'selection_rate', label: 'Шанс отбора', step: 0.01 },
-                                        { field: 'num_workers', label: 'Кол-во воркеров' }
-                                    ].map(({ field, label, step = 1 }) => (
+                                        {field: 'population_size', label: 'Размер популяции'},
+                                        {field: 'chrom_length', label: 'Длина хромосомы'},
+                                        {field: 'max_generations', label: 'Максимум поколений'},
+                                        {field: 'mutation_rate', label: 'Шанс мутации', step: 0.01},
+                                        {field: 'crossover_rate', label: 'Шанс кроссовера', step: 0.01},
+                                        {field: 'selection_rate', label: 'Шанс отбора', step: 0.01},
+                                        {field: 'num_workers', label: 'Кол-во воркеров'}
+                                    ].map(({field, label, step = 1}) => (
                                         <div key={field} className="mb-4">
                                             <label className="block text-sm mb-1">{label}</label>
                                             <input

@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 // Создаём экземпляр axios
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8000/api/v1', // Базовый URL API
+    baseURL: `${API_URL}`, // Базовый URL API
     timeout: 10000, // Таймаут для запросов (по желанию)
 });
 
@@ -14,7 +16,7 @@ const refreshToken = async () => {
     }
 
     try {
-        const response = await axios.post('http://localhost:8000/api/v1/auth/refresh', {
+        const response = await axios.post(`${API_URL}/auth/refresh`, {
             refresh: refreshToken,
         });
 

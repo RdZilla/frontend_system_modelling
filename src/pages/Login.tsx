@@ -3,6 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { saveTokens } from '../utils/tokenStorage';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Login: React.FC = () => {
     useEffect(() => {
         document.title = 'Авторизация';
@@ -15,7 +17,7 @@ const Login: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8000/api/v1/auth/login', {
+            const response = await axios.post(`${API_URL}/auth/login`, {
                 username,
                 password,
             });
