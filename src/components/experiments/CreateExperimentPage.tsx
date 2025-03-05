@@ -47,10 +47,10 @@ const CreateExperimentPage: React.FC = () => {
             name: '',
             config: {
                 algorithm: '',
-                population_size: 200,
+                population_size: 100,
                 max_generations: 100,
                 mutation_rate: 0.05,
-                crossover_rate: 0.05,
+                crossover_rate: 0.95,
                 selection_rate: 0.9,
                 num_workers: 1,
                 crossover_function: '',
