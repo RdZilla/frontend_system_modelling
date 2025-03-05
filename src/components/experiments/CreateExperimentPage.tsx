@@ -48,7 +48,6 @@ const CreateExperimentPage: React.FC = () => {
             config: {
                 algorithm: '',
                 population_size: 200,
-                chrom_length: 10,
                 max_generations: 100,
                 mutation_rate: 0.05,
                 crossover_rate: 0.05,
@@ -170,7 +169,6 @@ const CreateExperimentPage: React.FC = () => {
                                     {/* Числовые поля под соответствующими выпадающими списками */}
                                     {[
                                         {field: 'population_size', label: 'Размер популяции'},
-                                        {field: 'chrom_length', label: 'Длина хромосомы'},
                                         {field: 'max_generations', label: 'Максимум поколений'},
                                         {field: 'mutation_rate', label: 'Шанс мутации', step: 0.01},
                                         {field: 'crossover_rate', label: 'Шанс кроссовера', step: 0.01},
