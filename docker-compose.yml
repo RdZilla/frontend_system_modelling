@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - "5173:5173"  # Прокси-порт для Vite
+    volumes:
+      - .:/app  # Монтируем текущую папку в контейнер
+      - /app/node_modules  # Не перезаписывать папку с модулями
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Включаем polling для работы с файлами в контейнере (для хоста, если на Linux)
+      - VITE_API_URL=${VITE_API_URL}  # передаем переменную окружения из .env файла
