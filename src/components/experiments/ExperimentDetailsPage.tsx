@@ -19,6 +19,7 @@ interface TaskConfig {
     selection_function: string;
     termination_function: string;
     initialize_population_function: string;
+    [key: string]: any;
 }
 
 interface Task {
@@ -98,6 +99,33 @@ const ExperimentDetailsPage: React.FC = () => {
         }
     };
 
+    const startExperiment = async (experimentId: number) => {
+        // const params: { [key: string]: any } = {
+        //     page,
+        //     page_size,
+        //     ...filters,
+        // };
+        //
+        // const response = await axiosInstance.get<PaginatedResponse>(
+        //     `${API_URL}/task_module/experiment`,
+        //     {params}
+        // );
+
+        const params = {"start": true}
+
+        try {
+            await axiosInstance.get(
+                `${API_URL}/task_module/experiment/${experimentId}`,
+                {params}
+            );
+            showNotification('Эксперимент успешно запущен!', 'success');
+        } catch (error: any) {
+            console.error('Error starting experiment:', error);
+            const errorMessage = `Не удалось запустить эксперимент: ${error.response?.data?.detail}` || 'Не удалось запустить эксперимент.';
+            showNotification(errorMessage, "error")
+        }
+    };
+
     const stopTask = async (taskId: number) => {
         try {
             await axiosInstance.get(
@@ -172,6 +200,25 @@ const ExperimentDetailsPage: React.FC = () => {
         }
     };
 
+    const renderConfig = (config: any, prefix = '') => {
+        return Object.entries(config).map(([key, value]) => {
+            if (typeof value === 'object' && value !== null) {
+                return (
+                    <div key={prefix + key} className="ml-4">
+                        <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                        <div className="ml-4">{renderConfig(value, `${key}.`)}</div>
+                    </div>
+                );
+            }
+            return (
+                <div key={prefix + key} className="flex justify-between">
+                    <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                    <span>{value}</span>
+                </div>
+            );
+        });
+    };
+
     if (!experiment) {
         return <div>Загрузка...</div>;
     }
@@ -202,7 +249,7 @@ const ExperimentDetailsPage: React.FC = () => {
 
             <div className="mt-4">
                 <button
-                    onClick={startTask}
+                    onClick={() => startExperiment(experiment.id)}
                     className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-4"
                 >
                     Запустить эксперимент
@@ -257,12 +304,7 @@ const ExperimentDetailsPage: React.FC = () => {
 
                             <div className="mt-5">
                                 <div className="grid grid-cols-2 gap-2">
-                                    {Object.entries(task.config.config).map(([key, value]) => (
-                                        <div key={key} className="flex justify-between">
-                                            <span className="font-semibold">{key.replace('_', ' ').toUpperCase()}</span>
-                                            <span>{value}</span>
-                                        </div>
-                                    ))}
+                                    {renderConfig(task.config.config)}
                                 </div>
                             </div>
 

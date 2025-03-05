@@ -7,7 +7,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 interface TaskConfig {
     algorithm: string;
     num_workers: number;
-    chrom_length: number;
     mutation_rate: number;
     crossover_rate: number;
     selection_rate: number;
@@ -19,6 +18,7 @@ interface TaskConfig {
     selection_function: string;
     termination_function: string;
     initialize_population_function: string;
+    [key: string]: any;
 }
 
 
@@ -294,6 +294,24 @@ const ExperimentsList: React.FC = () => {
         setIsExpandedAll(prevState => !prevState); // Переключаем флаг
     };
 
+    const renderConfig = (config: any, prefix = '') => {
+        return Object.entries(config).map(([key, value]) => {
+            if (typeof value === 'object' && value !== null) {
+                return (
+                    <div key={prefix + key} className="ml-4">
+                        <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                        <div className="ml-4">{renderConfig(value, `${key}.`)}</div>
+                    </div>
+                );
+            }
+            return (
+                <div key={prefix + key} className="flex justify-between">
+                    <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                    <span>{value}</span>
+                </div>
+            );
+        });
+    };
 
     return (
         <div className="container mx-auto p-4">
@@ -421,13 +439,7 @@ const ExperimentsList: React.FC = () => {
                                                             <h4 className="text-lg font-semibold mb-8">Конфигурация
                                                                 задачи:</h4>
                                                             <div className="grid grid-cols-2 gap-2">
-                                                                {Object.entries(task.config.config).map(([key, value]) => (
-                                                                    <div key={key} className="flex justify-between">
-                                                                        <span
-                                                                            className="font-semibold">{key.replace('_', ' ').toUpperCase()}</span>
-                                                                        <span>{value}</span>
-                                                                    </div>
-                                                                ))}
+                                                                {renderConfig(task.config.config)}
                                                             </div>
                                                         </div>
                                                     )}
