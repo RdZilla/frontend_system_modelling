@@ -54,6 +54,7 @@ const CreateExperimentPage: React.FC = () => {
                 selection_rate: 0.9,
                 num_workers: 1,
                 crossover_function: '',
+                adaptation_function: '',
                 fitness_function: '',
                 initialize_population_function: '',
                 mutation_function: '',
@@ -124,6 +125,11 @@ const CreateExperimentPage: React.FC = () => {
                                             field: 'crossover_function',
                                             label: 'Функция кроссовера',
                                             options: Object.keys(options.crossover_functions)
+                                        },
+                                        {
+                                            field: 'adaptation_function',
+                                            label: 'Функция адаптации',
+                                            options: Object.keys(options.adaptation_functions)
                                         },
                                         {
                                             field: 'fitness_function',
