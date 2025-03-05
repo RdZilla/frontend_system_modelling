@@ -59,20 +59,47 @@ const CreateExperimentPage: React.FC = () => {
                 initialize_population_function: '',
                 mutation_function: '',
                 selection_function: '',
-                termination_function: ''
+                termination_function: '',
+                adaptation_kwargs: {},
+                crossover_kwargs: {},
+                fitness_kwargs: {},
+                initialize_population_kwargs: {},
+                mutation_kwargs: {},
+                selection_kwargs: {},
+                termination_kwargs: {}
             }
         }]);
     };
 
-    const updateConfig = (index: number, field: string, value: any) => {
+
+    const updateConfig = (index: number, field: string, value: any, param?: string) => {
         const updatedConfigs = [...configs];
-        updatedConfigs[index].config[field] = value;
+        if (param) {
+            // Обновляем параметр внутри *_kwargs
+            updatedConfigs[index].config[field] = {
+                ...updatedConfigs[index].config[field],
+                [param]: value
+            };
+        } else {
+            // Обновляем обычные поля или сбрасываем *_kwargs при смене функции
+            updatedConfigs[index].config[field] = value;
+            if (field.endsWith('_function')) {
+                updatedConfigs[index].config[`${field.replace('_function', '_kwargs')}`] = {};
+            }
+        }
         setConfigs(updatedConfigs);
     };
+
 
     const updateConfigName = (index: number, value: string) => {
         const updatedConfigs = [...configs];
         updatedConfigs[index].name = value;
+        setConfigs(updatedConfigs);
+    };
+
+    const updateConfigParams = (index: number, field: string, param: string, value: any) => {
+        const updatedConfigs = [...configs];
+        updatedConfigs[index].config[field][param] = value;
         setConfigs(updatedConfigs);
     };
 
@@ -121,42 +148,14 @@ const CreateExperimentPage: React.FC = () => {
                                     {/* Выпадающие списки и их подписи */}
                                     {[
                                         {field: 'algorithm', label: 'Алгоритм', options: options.supported_models},
-                                        {
-                                            field: 'crossover_function',
-                                            label: 'Функция кроссовера',
-                                            options: Object.keys(options.crossover_functions)
-                                        },
-                                        {
-                                            field: 'adaptation_function',
-                                            label: 'Функция адаптации',
-                                            options: Object.keys(options.adaptation_functions)
-                                        },
-                                        {
-                                            field: 'fitness_function',
-                                            label: 'Фитнес-функция',
-                                            options: Object.keys(options.fitness_functions)
-                                        },
-                                        {
-                                            field: 'initialize_population_function',
-                                            label: 'Функция инициализации',
-                                            options: Object.keys(options.init_population_functions)
-                                        },
-                                        {
-                                            field: 'mutation_function',
-                                            label: 'Функция мутации',
-                                            options: Object.keys(options.mutation_functions)
-                                        },
-                                        {
-                                            field: 'selection_function',
-                                            label: 'Функция селекции',
-                                            options: Object.keys(options.selection_functions)
-                                        },
-                                        {
-                                            field: 'termination_function',
-                                            label: 'Функция завершения',
-                                            options: Object.keys(options.termination_functions)
-                                        },
-                                    ].map(({field, label, options}) => (
+                                        {field: 'crossover_function', label: 'Функция кроссовера', options: Object.keys(options.crossover_functions)},
+                                        {field: 'adaptation_function', label: 'Функция адаптации', options: Object.keys(options.adaptation_functions)},
+                                        {field: 'fitness_function', label: 'Фитнес-функция', options: Object.keys(options.fitness_functions)},
+                                        {field: 'initialize_population_function', label: 'Функция инициализации', options: Object.keys(options.initialize_population_functions)},
+                                        {field: 'mutation_function', label: 'Функция мутации', options: Object.keys(options.mutation_functions)},
+                                        {field: 'selection_function', label: 'Функция селекции', options: Object.keys(options.selection_functions)},
+                                        {field: 'termination_function', label: 'Функция завершения', options: Object.keys(options.termination_functions)},
+                                    ].map(({field, label, options: funcOptions}) => (
                                         <div key={field} className="mb-4">
                                             <label className="block text-sm mb-1">{label}</label>
                                             <select
@@ -165,10 +164,39 @@ const CreateExperimentPage: React.FC = () => {
                                                 onChange={(e) => updateConfig(index, field, e.target.value)}
                                             >
                                                 <option value="">Выберите {label.toLowerCase()}</option>
-                                                {options.map((option: string) => (
+                                                {funcOptions.map((option: string) => (
                                                     <option key={option} value={option}>{option}</option>
                                                 ))}
                                             </select>
+
+                                            {/* Поля для параметров выбранных функций */}
+                                            {field !== 'algorithm' && config.config[field] && (() => {
+                                                // Получаем параметры для выбранной функции
+                                                const functionType = field.replace('_function', '_functions');
+                                                const selectedFunction = config.config[field];
+                                                const params = options[functionType]?.[selectedFunction];
+
+                                                console.log(`Параметры для ${selectedFunction}:`, params);  // Для отладки
+
+                                                return params && params.length > 0 ? (
+                                                    <div className="mt-2">
+                                                        {params.map((param: string) => (
+                                                            <div key={param} className="mb-2">
+                                                                <label className="block text-sm mb-1">{param}</label>
+                                                                <input
+                                                                    type="number"
+                                                                    className="border p-2 rounded w-full"
+                                                                    placeholder={param}
+                                                                    value={config.config[`${field.replace('_function', '_kwargs')}`]?.[param] || ''}
+                                                                    onChange={(e) =>
+                                                                        updateConfig(index, `${field.replace('_function', '_kwargs')}`, param, +e.target.value)
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : null;
+                                            })()}
                                         </div>
                                     ))}
 
@@ -195,6 +223,7 @@ const CreateExperimentPage: React.FC = () => {
                                     ))}
                                 </>
                             )}
+
                         </div>
                     ))}
 
