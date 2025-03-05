@@ -74,21 +74,26 @@ const CreateExperimentPage: React.FC = () => {
 
     const updateConfig = (index: number, field: string, value: any, param?: string) => {
         const updatedConfigs = [...configs];
+
         if (param) {
             // Обновляем параметр внутри *_kwargs
-            updatedConfigs[index].config[field] = {
-                ...updatedConfigs[index].config[field],
+            const kwargsField = `${field.replace('_function', '_kwargs')}`;
+            updatedConfigs[index].config[kwargsField] = {
+                ...updatedConfigs[index].config[kwargsField],
                 [param]: value
             };
+            console.log(`Изменён параметр ${param} для ${field}:`, updatedConfigs[index].config[kwargsField]);
         } else {
-            // Обновляем обычные поля или сбрасываем *_kwargs при смене функции
-            updatedConfigs[index].config[field] = value;
-            if (field.endsWith('_function')) {
-                updatedConfigs[index].config[`${field.replace('_function', '_kwargs')}`] = {};
+            // Обновляем обычные поля и сбрасываем *_kwargs только при смене функции
+            if (field.endsWith('_function') && updatedConfigs[index].config[field] !== value) {
+                updatedConfigs[index].config[`${field.replace('_function', '_kwargs')}`] = {};  // Сброс параметров для новой функции
             }
+            updatedConfigs[index].config[field] = value;
         }
+
         setConfigs(updatedConfigs);
     };
+
 
 
     const updateConfigName = (index: number, value: string) => {
@@ -184,12 +189,12 @@ const CreateExperimentPage: React.FC = () => {
                                                             <div key={param} className="mb-2">
                                                                 <label className="block text-sm mb-1">{param}</label>
                                                                 <input
-                                                                    type="number"
+                                                                    type="text"
                                                                     className="border p-2 rounded w-full"
                                                                     placeholder={param}
-                                                                    value={config.config[`${field.replace('_function', '_kwargs')}`]?.[param] || ''}
+                                                                    value={config.config[`${field.replace('_function', '_kwargs')}`]?.[param] || ''}  // Безопасное значение
                                                                     onChange={(e) =>
-                                                                        updateConfig(index, `${field.replace('_function', '_kwargs')}`, param, +e.target.value)
+                                                                        updateConfig(index, field, e.target.value, param)  // Исправленный вызов
                                                                     }
                                                                 />
                                                             </div>
