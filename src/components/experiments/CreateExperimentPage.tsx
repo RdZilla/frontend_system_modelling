@@ -95,16 +95,9 @@ const CreateExperimentPage: React.FC = () => {
     };
 
 
-
     const updateConfigName = (index: number, value: string) => {
         const updatedConfigs = [...configs];
         updatedConfigs[index].name = value;
-        setConfigs(updatedConfigs);
-    };
-
-    const updateConfigParams = (index: number, field: string, param: string, value: any) => {
-        const updatedConfigs = [...configs];
-        updatedConfigs[index].config[field][param] = value;
         setConfigs(updatedConfigs);
     };
 
@@ -153,13 +146,41 @@ const CreateExperimentPage: React.FC = () => {
                                     {/* Выпадающие списки и их подписи */}
                                     {[
                                         {field: 'algorithm', label: 'Алгоритм', options: options.supported_models},
-                                        {field: 'crossover_function', label: 'Функция кроссовера', options: Object.keys(options.crossover_functions)},
-                                        {field: 'adaptation_function', label: 'Функция адаптации', options: Object.keys(options.adaptation_functions)},
-                                        {field: 'fitness_function', label: 'Фитнес-функция', options: Object.keys(options.fitness_functions)},
-                                        {field: 'initialize_population_function', label: 'Функция инициализации', options: Object.keys(options.initialize_population_functions)},
-                                        {field: 'mutation_function', label: 'Функция мутации', options: Object.keys(options.mutation_functions)},
-                                        {field: 'selection_function', label: 'Функция селекции', options: Object.keys(options.selection_functions)},
-                                        {field: 'termination_function', label: 'Функция завершения', options: Object.keys(options.termination_functions)},
+                                        {
+                                            field: 'crossover_function',
+                                            label: 'Функция кроссовера',
+                                            options: Object.keys(options.crossover_functions)
+                                        },
+                                        {
+                                            field: 'adaptation_function',
+                                            label: 'Функция адаптации',
+                                            options: Object.keys(options.adaptation_functions)
+                                        },
+                                        {
+                                            field: 'fitness_function',
+                                            label: 'Фитнес-функция',
+                                            options: Object.keys(options.fitness_functions)
+                                        },
+                                        {
+                                            field: 'initialize_population_function',
+                                            label: 'Функция инициализации',
+                                            options: Object.keys(options.initialize_population_functions)
+                                        },
+                                        {
+                                            field: 'mutation_function',
+                                            label: 'Функция мутации',
+                                            options: Object.keys(options.mutation_functions)
+                                        },
+                                        {
+                                            field: 'selection_function',
+                                            label: 'Функция селекции',
+                                            options: Object.keys(options.selection_functions)
+                                        },
+                                        {
+                                            field: 'termination_function',
+                                            label: 'Функция завершения',
+                                            options: Object.keys(options.termination_functions)
+                                        },
                                     ].map(({field, label, options: funcOptions}) => (
                                         <div key={field} className="mb-4">
                                             <label className="block text-sm mb-1">{label}</label>

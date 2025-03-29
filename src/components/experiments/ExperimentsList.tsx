@@ -117,7 +117,9 @@ const ExperimentsList: React.FC = () => {
                 page: response.data.page,
                 page_size: response.data.page_size,
                 total: response.data.total,
+                // @ts-ignore
                 next: response.data.links.next,
+                // @ts-ignore
                 previous: response.data.links.previous,
             });
         } catch (error: any) {
@@ -307,7 +309,7 @@ const ExperimentsList: React.FC = () => {
             return (
                 <div key={prefix + key} className="flex justify-between">
                     <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
-                    <span>{value}</span>
+                    <span>{value as string}</span>
                 </div>
             );
         });

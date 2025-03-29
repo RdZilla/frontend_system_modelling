@@ -19,6 +19,7 @@ interface TaskConfig {
     selection_function: string;
     termination_function: string;
     initialize_population_function: string;
+
     [key: string]: any;
 }
 
@@ -54,7 +55,7 @@ const ExperimentDetailsPage: React.FC = () => {
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
     const showNotification = (message: string, type: 'success' | 'error') => {
-        setNotification({ message, type });
+        setNotification({message, type});
 
         // Автоматическое скрытие уведомления через 5 секунд
         setTimeout(() => {
@@ -80,10 +81,13 @@ const ExperimentDetailsPage: React.FC = () => {
         fetchExperimentDetails();
     }, [id]);
 
-    const startTask = async (taskId: number) => {
+    const startTask = async (experimentId: number, taskId: number) => {
         try {
+            const params = {"start": true}
+
             await axiosInstance.get(
-                `${API_URL}/task_module/task/${taskId}/start`
+                `${API_URL}/task_module/experiment/${experimentId}/task/${taskId}`,
+                {params}
             );
             showNotification('Задача успешно запущена!', 'success');
             setExperiment(prev => prev ? {
@@ -100,17 +104,6 @@ const ExperimentDetailsPage: React.FC = () => {
     };
 
     const startExperiment = async (experimentId: number) => {
-        // const params: { [key: string]: any } = {
-        //     page,
-        //     page_size,
-        //     ...filters,
-        // };
-        //
-        // const response = await axiosInstance.get<PaginatedResponse>(
-        //     `${API_URL}/task_module/experiment`,
-        //     {params}
-        // );
-
         const params = {"start": true}
 
         try {
@@ -126,10 +119,30 @@ const ExperimentDetailsPage: React.FC = () => {
         }
     };
 
-    const stopTask = async (taskId: number) => {
+    const stopExperiment = async (experimentId: number) => {
+        const params = {"stop": true}
+
         try {
             await axiosInstance.get(
-                `${API_URL}/task_module/task/${taskId}/stop`
+                `${API_URL}/task_module/experiment/${experimentId}`,
+                {params}
+            );
+            showNotification('Эксперимент успешно остановлен!', 'success');
+        } catch (error: any) {
+            console.error('Error stopping experiment:', error);
+            const errorMessage = `Не удалось остановить эксперимент: ${error.response?.data?.detail}` || 'Не удалось запустить эксперимент.';
+            showNotification(errorMessage, "error")
+        }
+    }
+
+    const stopTask = async (experimentId: number, taskId: number) => {
+        try {
+
+            const params = {"stop": true}
+
+            await axiosInstance.get(
+                `${API_URL}/task_module/experiment/${experimentId}/task/${taskId}`,
+                {params}
             );
             showNotification('Задача успешно остановлена!', 'success');
             setExperiment(prev => prev ? {
@@ -213,7 +226,7 @@ const ExperimentDetailsPage: React.FC = () => {
             return (
                 <div key={prefix + key} className="flex justify-between">
                     <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
-                    <span>{value}</span>
+                    <span>{value as string}</span>
                 </div>
             );
         });
@@ -248,12 +261,22 @@ const ExperimentDetailsPage: React.FC = () => {
             )}
 
             <div className="mt-4">
-                <button
-                    onClick={() => startExperiment(experiment.id)}
-                    className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-4"
-                >
-                    Запустить эксперимент
-                </button>
+                {experiment.status === 'created' || experiment.status === 'stopped' || experiment.status === 'error' ? (
+                    <button
+                        onClick={() => startExperiment(experiment.id)}
+                        className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-4"
+                    >
+                        Запустить эксперимент
+                    </button>
+                ) : null}
+                {experiment.status === 'started' ? (
+                    <button
+                        onClick={() => stopExperiment(experiment.id)}
+                        className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mr-4"
+                    >
+                        Остановить эксперимент
+                    </button>
+                ) : null}
 
                 <button
                     onClick={() => setIsEditing(!isEditing)}
@@ -311,7 +334,7 @@ const ExperimentDetailsPage: React.FC = () => {
                             <div className="mt-5">
                                 {task.status === 'created' || task.status === 'stopped' || task.status === 'error' ? (
                                     <button
-                                        onClick={() => startTask(task.id)}
+                                        onClick={() => startTask(experiment.id, task.id)}
                                         className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-4"
                                     >
                                         Запустить задачу
@@ -322,11 +345,27 @@ const ExperimentDetailsPage: React.FC = () => {
                             <div className="mt-5">
                                 {task.status === 'started' ? (
                                     <button
-                                        onClick={() => stopTask(task.id)}
-                                        className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                                        onClick={() => stopTask(experiment.id, task.id)}
+                                        className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mr-4"
                                     >
                                         Остановить задачу
                                     </button>
+                                ) : null}
+                                {task.status === 'finished' ? (
+                                <button
+                                    onClick={() => stopTask(experiment.id, task.id)}
+                                    className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-4"
+                                >
+                                    График
+                                </button>
+                                ) : null}
+                                {task.status === 'finished' ? (
+                                <button
+                                    onClick={() => stopTask(experiment.id, task.id)}
+                                    className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-4"
+                                >
+                                    Выгрузить результаты
+                                </button>
                                 ) : null}
                             </div>
                         </div>
