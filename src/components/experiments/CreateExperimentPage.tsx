@@ -30,6 +30,11 @@ const CreateExperimentPage: React.FC = () => {
         initialize_population_kwargs: 'Параметры инициализации популяции',
         initialize_population_function: 'Функция инициализации популяции',
     };
+    const modelTranslations: Record<string, string> = {
+        master_worker: 'Мастер воркер модель',
+        island_model: 'Островная модель',
+        asynchronous_model: 'Асинхронная модель',
+    };
 
     const [name, setName] = useState('');
     const [configs, setConfigs] = useState<any[]>([]);
@@ -156,7 +161,7 @@ const CreateExperimentPage: React.FC = () => {
                                         {
                                             Object.keys(algorithms).map((algorithm) => (
                                                 <option key={algorithm}
-                                                        value={algorithm}> {algorithm} </option>
+                                                        value={algorithm}> {modelTranslations[algorithm]} </option>
                                             ))
                                         }
                                     </select>

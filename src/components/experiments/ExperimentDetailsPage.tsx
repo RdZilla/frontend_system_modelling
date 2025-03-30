@@ -56,6 +56,11 @@ const ExperimentDetailsPage: React.FC = () => {
         stopped: 'Остановлен',
         error: 'Ошибка'
     };
+    const modelTranslations: Record<string, string> = {
+        master_worker: 'Мастер воркер модель',
+        island_model: 'Островная модель',
+        asynchronous_model: 'Асинхронная модель',
+    };
 
     const {id} = useParams<{ id: string }>();
     const [experiment, setExperiment] = useState<Experiment | null>(null);
@@ -373,7 +378,7 @@ const ExperimentDetailsPage: React.FC = () => {
                     {normalParams.map(([key, value]) => (
                         <div key={prefix + key} className="flex justify-between items-center border-b last:border-b-0 p-2 bg-gray-300 rounded-lg">
                             <span className="font-semibold ">{configTranslations[key] || key.replace(/_/g, ' ').toUpperCase()}:</span>
-                            <span>{value as string}</span>
+                            <span>{modelTranslations[value as string] || value}</span>
                         </div>
                     ))}
                 </div>
