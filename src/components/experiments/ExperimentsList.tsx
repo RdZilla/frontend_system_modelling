@@ -345,33 +345,47 @@ const ExperimentsList: React.FC = () => {
         termination_function: 'Функция завершения',
         initialize_population_kwargs: 'Параметры инициализации популяции',
         initialize_population_function: 'Функция инициализации популяции',
+        adaptation_function: 'Функция адаптации',
         adaptation_kwargs: 'Параметры адаптации',
     };
 
     const configOrder: string[] = [
         'algorithm',
-        'num_islands',
+        'population_size',
+
+        'max_generations',
         'num_workers',
+
         'mutation_rate',
         'crossover_rate',
-        'fitness_kwargs',
+
         'selection_rate',
         'migration_rate',
-        'max_generations',
-        'mutation_kwargs',
-        'population_size',
-        'crossover_kwargs',
-        'fitness_function',
-        'selection_kwargs',
-        'mutation_function',
-        'crossover_function',
+
         'migration_interval',
-        'selection_function',
-        'termination_kwargs',
-        'termination_function',
-        'initialize_population_kwargs',
+        'num_islands',
+
+        'adaptation_function',
+        'adaptation_kwargs',
+
+        'crossover_function',
+        'crossover_kwargs',
+
+        'fitness_function',
+        'fitness_kwargs',
+
         'initialize_population_function',
-        'adaptation_kwargs'
+        'initialize_population_kwargs',
+
+        'mutation_function',
+        'mutation_kwargs',
+
+
+        'selection_function',
+        'selection_kwargs',
+
+        'termination_function',
+        'termination_kwargs'
     ];
 
     const renderConfig = (config: any, prefix = '') => {

@@ -5,17 +5,48 @@ import {useNavigate} from 'react-router-dom';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const CreateExperimentPage: React.FC = () => {
+    const configTranslations: Record<string, string> = {
+        adaptation_kwargs: 'Параметры адаптации',
+        algorithm: 'Алгоритм',
+        num_islands: 'Количество островов',
+        num_workers: 'Количество рабочих процессов',
+        mutation_rate: 'Вероятность мутации',
+        crossover_rate: 'Вероятность кроссинговера',
+        fitness_kwargs: 'Параметры функции приспособленности',
+        selection_rate: 'Вероятность отбора особей',
+        migration_rate: 'Частота миграции',
+        max_generations: 'Максимальное количество поколений',
+        mutation_kwargs: 'Параметры мутации',
+        population_size: 'Размер популяции',
+        crossover_kwargs: 'Параметры кроссинговера',
+        fitness_function: 'Функция приспособленности',
+        selection_kwargs: 'Параметры селекции',
+        mutation_function: 'Функция мутации',
+        crossover_function: 'Функция кроссинговера',
+        migration_interval: 'Интервал миграции',
+        selection_function: 'Функция селекции',
+        termination_kwargs: 'Параметры завершения',
+        termination_function: 'Функция завершения',
+        initialize_population_kwargs: 'Параметры инициализации популяции',
+        initialize_population_function: 'Функция инициализации популяции',
+    };
+
     const [name, setName] = useState('');
     const [configs, setConfigs] = useState<any[]>([]);
     const [error, setError] = useState('');
     const [options, setOptions] = useState<any>(null);
+    const [algorithms, setAlgorithms] = useState<any>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchOptions = async () => {
             try {
-                const response = await axiosInstance.get(`${API_URL}/task_module/math_function`);
-                setOptions(response.data.detail);
+                const [algorithmsResponse, functionsResponse] = await Promise.all([
+                    axiosInstance.get(`${API_URL}/task_module/get_supported_algorithms`),
+                    axiosInstance.get(`${API_URL}/task_module/math_function`)
+                ]);
+                setAlgorithms(algorithmsResponse.data);
+                setOptions(functionsResponse.data);
             } catch (err) {
                 console.error("Ошибка при загрузке данных:", err);
                 setError('Ошибка при загрузке данных');
@@ -43,34 +74,8 @@ const CreateExperimentPage: React.FC = () => {
     };
 
     const addConfig = () => {
-        setConfigs([...configs, {
-            name: '',
-            config: {
-                algorithm: '',
-                population_size: 100,
-                max_generations: 100,
-                mutation_rate: 0.05,
-                crossover_rate: 0.95,
-                selection_rate: 0.9,
-                num_workers: 1,
-                crossover_function: '',
-                adaptation_function: '',
-                fitness_function: '',
-                initialize_population_function: '',
-                mutation_function: '',
-                selection_function: '',
-                termination_function: '',
-                adaptation_kwargs: {},
-                crossover_kwargs: {},
-                fitness_kwargs: {},
-                initialize_population_kwargs: {},
-                mutation_kwargs: {},
-                selection_kwargs: {},
-                termination_kwargs: {}
-            }
-        }]);
+        setConfigs([...configs, {name: '', config: {}}]);
     };
-
     const updateConfig = (index: number, field: string, value: any, param?: string) => {
         const updatedConfigs = [...configs];
 
@@ -138,116 +143,124 @@ const CreateExperimentPage: React.FC = () => {
                                 onChange={(e) => updateConfigName(index, e.target.value)}
                                 className="border p-2 rounded w-full mb-4"
                             />
-
-                            {options && (
-                                <>
-                                    {/* Выпадающие списки и их подписи */}
-                                    {[
-                                        {field: 'algorithm', label: 'Алгоритм', options: options.supported_models},
+                            {algorithms && (
+                                <div className="mb-4">
+                                    <label className="block text-sm mb-1"> Алгоритм </label>
+                                    <select
+                                        className="border p-2 rounded w-full"
+                                        value={config.config.algorithm || ''}
+                                        onChange={(e) => updateConfig(index, 'algorithm', e.target.value)
+                                        }
+                                    >
+                                        <option value=""> Выберите алгоритм</option>
                                         {
-                                            field: 'crossover_function',
-                                            label: 'Функция кроссовера',
-                                            options: Object.keys(options.crossover_functions)
-                                        },
-                                        {
-                                            field: 'adaptation_function',
-                                            label: 'Функция адаптации',
-                                            options: Object.keys(options.adaptation_functions)
-                                        },
-                                        {
-                                            field: 'fitness_function',
-                                            label: 'Фитнес-функция',
-                                            options: Object.keys(options.fitness_functions)
-                                        },
-                                        {
-                                            field: 'initialize_population_function',
-                                            label: 'Функция инициализации',
-                                            options: Object.keys(options.initialize_population_functions)
-                                        },
-                                        {
-                                            field: 'mutation_function',
-                                            label: 'Функция мутации',
-                                            options: Object.keys(options.mutation_functions)
-                                        },
-                                        {
-                                            field: 'selection_function',
-                                            label: 'Функция селекции',
-                                            options: Object.keys(options.selection_functions)
-                                        },
-                                        {
-                                            field: 'termination_function',
-                                            label: 'Функция завершения',
-                                            options: Object.keys(options.termination_functions)
-                                        },
-                                    ].map(({field, label, options: funcOptions}) => (
-                                        <div key={field} className="mb-4">
-                                            <label className="block text-sm mb-1">{label}</label>
-                                            <select
-                                                className="border p-2 rounded w-full"
-                                                value={config.config[field]}
-                                                onChange={(e) => updateConfig(index, field, e.target.value)}
-                                            >
-                                                <option value="">Выберите {label.toLowerCase()}</option>
-                                                {funcOptions.map((option: string) => (
-                                                    <option key={option} value={option}>{option}</option>
-                                                ))}
-                                            </select>
-
-                                            {/* Поля для параметров выбранных функций */}
-                                            {field !== 'algorithm' && config.config[field] && (() => {
-                                                // Получаем параметры для выбранной функции
-                                                const functionType = field.replace('_function', '_functions');
-                                                const selectedFunction = config.config[field];
-                                                const params = options[functionType]?.[selectedFunction];
-
-                                                console.log(`Параметры для ${selectedFunction}:`, params);  // Для отладки
-
-                                                return params && params.length > 0 ? (
-                                                    <div className="mt-2">
-                                                        {params.map((param: string) => (
-                                                            <div key={param} className="mb-2">
-                                                                <label className="block text-sm mb-1">{param}</label>
-                                                                <input
-                                                                    type="text"
-                                                                    className="border p-2 rounded w-full"
-                                                                    placeholder={param}
-                                                                    value={config.config[`${field.replace('_function', '_kwargs')}`]?.[param] || ''}  // Безопасное значение
-                                                                    onChange={(e) =>
-                                                                        updateConfig(index, field, e.target.value, param)  // Исправленный вызов
-                                                                    }
-                                                                />
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                ) : null;
-                                            })()}
-                                        </div>
-                                    ))}
-
-                                    {/* Числовые поля под соответствующими выпадающими списками */}
-                                    {[
-                                        {field: 'population_size', label: 'Размер популяции'},
-                                        {field: 'max_generations', label: 'Максимум поколений'},
-                                        {field: 'mutation_rate', label: 'Шанс мутации', step: 0.01},
-                                        {field: 'crossover_rate', label: 'Шанс кроссовера', step: 0.01},
-                                        {field: 'selection_rate', label: 'Шанс отбора', step: 0.01},
-                                        {field: 'num_workers', label: 'Кол-во воркеров'}
-                                    ].map(({field, label, step = 1}) => (
-                                        <div key={field} className="mb-4">
-                                            <label className="block text-sm mb-1">{label}</label>
-                                            <input
-                                                type="number"
-                                                step={step}
-                                                className="border p-2 rounded w-full"
-                                                placeholder={label}
-                                                value={config.config[field]}
-                                                onChange={(e) => updateConfig(index, field, +e.target.value)}
-                                            />
-                                        </div>
-                                    ))}
-                                </>
+                                            Object.keys(algorithms).map((algorithm) => (
+                                                <option key={algorithm}
+                                                        value={algorithm}> {algorithm} </option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
                             )}
+                            {config.config.algorithm && algorithms[config.config.algorithm]
+                                ?.filter((param: string) => ![
+                                    'algorithm',
+                                    'crossover_function',
+                                    'initialize_population_function',
+                                    'fitness_function',
+                                    'mutation_function',
+                                    'selection_function'
+                                ].includes(param)).map((param: string) => (
+                                    <div key={param} className="mb-4">
+                                        <label className="block text-sm mb-1">{configTranslations[param] || param.replace(/_/g, ' ').toUpperCase()}</label>
+                                        <input
+                                            type="text"
+                                            className="border p-2 rounded w-full"
+                                            value={config.config[param] || ''}
+                                            onChange={(e) => updateConfig(index, param, e.target.value)}
+                                        />
+                                    </div>
+                                ))}
 
+                            {[
+                                {
+                                    field: 'crossover_function',
+                                    label: 'Функция кроссовера',
+                                    options: Object.keys(options.crossover_functions)
+                                },
+                                {
+                                    field: 'adaptation_function',
+                                    label: 'Функция адаптации',
+                                    options: Object.keys(options.adaptation_functions)
+                                },
+                                {
+                                    field: 'fitness_function',
+                                    label: 'Фитнес-функция',
+                                    options: Object.keys(options.fitness_functions)
+                                },
+                                {
+                                    field: 'initialize_population_function',
+                                    label: 'Функция инициализации',
+                                    options: Object.keys(options.initialize_population_functions)
+                                },
+                                {
+                                    field: 'mutation_function',
+                                    label: 'Функция мутации',
+                                    options: Object.keys(options.mutation_functions)
+                                },
+                                {
+                                    field: 'selection_function',
+                                    label: 'Функция селекции',
+                                    options: Object.keys(options.selection_functions)
+                                },
+                                {
+                                    field: 'termination_function',
+                                    label: 'Функция завершения',
+                                    options: Object.keys(options.termination_functions)
+                                },
+                            ].map(({field, label, options: funcOptions}) => (
+                                <div key={field} className="mb-4">
+                                    <label className="block text-sm mb-1">{label}</label>
+                                    <select
+                                        className="border p-2 rounded w-full"
+                                        value={config.config[field]}
+                                        onChange={(e) => updateConfig(index, field, e.target.value)}
+                                    >
+                                        <option value="">Выберите {label.toLowerCase()}</option>
+                                        {funcOptions.map((option: string) => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+
+                                    {field !== 'algorithm' && config.config[field] && (() => {
+                                        // Получаем параметры для выбранной функции
+                                        const functionType = field.replace('_function', '_functions');
+                                        const selectedFunction = config.config[field];
+                                        const params = options[functionType]?.[selectedFunction];
+
+                                        console.log(`Параметры для ${selectedFunction}:`, params);  // Для отладки
+
+                                        return params && params.length > 0 ? (
+                                            <div className="mt-2">
+                                                {params.map((param: string) => (
+                                                    <div key={param} className="mb-2">
+                                                        <label className="block text-sm mb-1">{param}</label>
+                                                        <input
+                                                            type="text"
+                                                            className="border p-2 rounded w-full"
+                                                            placeholder={param}
+                                                            value={config.config[`${field.replace('_function', '_kwargs')}`]?.[param] || ''}  // Безопасное значение
+                                                            onChange={(e) =>
+                                                                updateConfig(index, field, e.target.value, param)  // Исправленный вызов
+                                                            }
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+                            ))}
                         </div>
                     ))}
 
