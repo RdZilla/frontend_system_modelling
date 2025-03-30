@@ -348,7 +348,7 @@ const ExperimentDetailsPage: React.FC = () => {
                 return indexA - indexB;
             });
 
-        const normalParams = [];
+        const normalParams: [string, any][] = [];
         const functionParams = new Map();
 
         sortedEntries.forEach(([key, value]) => {
