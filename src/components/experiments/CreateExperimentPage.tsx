@@ -71,7 +71,6 @@ const CreateExperimentPage: React.FC = () => {
         }]);
     };
 
-
     const updateConfig = (index: number, field: string, value: any, param?: string) => {
         const updatedConfigs = [...configs];
 
@@ -93,7 +92,6 @@ const CreateExperimentPage: React.FC = () => {
 
         setConfigs(updatedConfigs);
     };
-
 
     const updateConfigName = (index: number, value: string) => {
         const updatedConfigs = [...configs];
@@ -128,7 +126,7 @@ const CreateExperimentPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => removeConfig(index)}
-                                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                className="absolute top-2 right-2 text-white bg-red-500 hover:bg-red-700 font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md transition-all"
                             >
                                 ✕
                             </button>
@@ -258,9 +256,9 @@ const CreateExperimentPage: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={addConfig}
-                                className="border border-gray-400 p-4 rounded-full w-16 h-16 flex justify-center items-center text-2xl text-gray-600 hover:text-black hover:border-black transition"
+                                className="border border-gray-400 rounded-full w-16 h-16 flex justify-center items-center text-3xl text-gray-600 bg-white hover:text-white hover:bg-black hover:border-black shadow-lg transition-all"
                             >
-                                +
+                                <span className="leading-none flex items-center justify-center">+</span>
                             </button>
                         </div>
                     )}
