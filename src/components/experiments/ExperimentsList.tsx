@@ -389,41 +389,77 @@ const ExperimentsList: React.FC = () => {
     ];
 
     const renderConfig = (config: any, prefix = '') => {
-        // Сортируем ключи по порядку из configOrder
         const sortedEntries = Object.entries(config)
             .sort(([keyA], [keyB]) => {
                 const indexA = configOrder.indexOf(keyA);
                 const indexB = configOrder.indexOf(keyB);
-                // Если ключа нет в configOrder, ставим его в конец
                 if (indexA === -1 && indexB === -1) return 0;
                 if (indexA === -1) return 1;
                 if (indexB === -1) return -1;
                 return indexA - indexB;
             });
 
-        return sortedEntries.map(([key, value]) => {
-            const translatedKey = configTranslations[key] || key.replace(/_/g, ' ').toUpperCase();
+        const normalParams = [];
+        const functionParams = new Map();
 
-            if (typeof value === 'object' && value !== null) {
-                return (
-                    <div key={prefix + key} className="ml-4">
-                        <span className="font-semibold">{translatedKey}:</span>
-                        <div className="ml-4">{renderConfig(value, `${key}.`)}</div>
-                    </div>
-                );
+        sortedEntries.forEach(([key, value]) => {
+            if (key.endsWith('_function')) {
+                functionParams.set(key, { function: value, kwargs: null });
+            } else if (key.endsWith('_kwargs')) {
+                const functionKey = key.replace('_kwargs', '_function');
+                if (functionParams.has(functionKey)) {
+                    functionParams.get(functionKey).kwargs = value;
+                } else {
+                    functionParams.set(functionKey, { function: null, kwargs: value });
+                }
+            } else {
+                normalParams.push([key, value]);
             }
-            return (
-                <div key={prefix + key} className="flex justify-between">
-                    <span className="font-semibold">{translatedKey}:</span>
-                    <span>{value as string}</span>
-                </div>
-            );
         });
+
+        return (
+            <>
+                {/* Обычные параметры в две колонки */}
+                <div className="grid grid-cols-2 gap-2 items-center pb-3 border-b-2 border-black">
+                    {normalParams.map(([key, value]) => (
+                        <div key={prefix + key} className="flex justify-between items-center border-b last:border-b-0 p-2 bg-gray-300 rounded-lg">
+                            <span className="font-semibold ">{configTranslations[key] || key.replace(/_/g, ' ').toUpperCase()}:</span>
+                            <span>{value as string}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Группировка функций и kwargs */}
+                <div className="mt-2">
+                    {Array.from(functionParams.entries()).map(([key, { function: func, kwargs }]) => (
+                        <div key={key} className="grid grid-cols-2 gap-2 p-2 border-b last:border-b-0 mb-2 bg-gray-200 rounded-lg items-center">
+                            <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2">
+                                <span className="font-semibold">{configTranslations[key] || key.replace(/_/g, ' ').toUpperCase()}:</span>
+                                <span>{func as string}</span>
+                            </div>
+                            {kwargs && (
+                                <div className="mt-2 ml-4 bg-gray-300 rounded-lg items-center p-2 items-center">
+                                    <span className="font-semibold">{configTranslations[key.replace('_function', '_kwargs')] || key.replace('_function', '_KWARGS').toUpperCase()}:</span>
+                                    <div className="ml-4 grid grid-cols-2 gap-2 border-gray-300">
+                                        {Object.entries(kwargs).map(([kwargKey, kwargValue]) => (
+                                            <div key={kwargKey} className="flex justify-between bg-gray-400 rounded-lg p-2 items-center">
+                                                <span className="font-semibold">{configTranslations[kwargKey] || kwargKey}:</span>
+                                                <span>{kwargValue as string}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </>
+        );
     };
 
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="container mx-auto p-0">
             {notification && (
                 <div
                     className={`fixed top-4 right-4 p-4 rounded-lg text-white flex items-center justify-between shadow-lg transition-opacity duration-300 ${
@@ -440,7 +476,7 @@ const ExperimentsList: React.FC = () => {
                     </button>
                 </div>
             )}
-            <div className="flex justify-between mb-4">
+            <div className="flex justify-between mb-4 mt-4">
                 <div className="flex space-x-4">
                     <Link
                         to="/create-experiment"
@@ -546,7 +582,7 @@ const ExperimentsList: React.FC = () => {
                                                     {expandedTasks.has(task.id) && (
                                                         <div className="mt-2">
                                                             <h4 className="text-lg font-semibold mb-4">Конфигурация {task.config.id}: {task.config.name}</h4>
-                                                            <div className="grid grid-cols-2 gap-2">
+                                                            <div>
                                                                 {renderConfig(task.config.config)}
                                                             </div>
                                                         </div>
