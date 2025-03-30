@@ -369,7 +369,7 @@ const ExperimentDetailsPage: React.FC = () => {
         return (
             <>
                 {/* Обычные параметры в две колонки */}
-                <div className="grid grid-cols-2 gap-2 items-center pb-3 border-b-2 border-black">
+                <div className="grid grid-cols-2 gap-2 items-center pb-2 border-b-2 border-black">
                     {normalParams.map(([key, value]) => (
                         <div key={prefix + key} className="flex justify-between items-center border-b last:border-b-0 p-2 bg-gray-300 rounded-lg">
                             <span className="font-semibold ">{configTranslations[key] || key.replace(/_/g, ' ').toUpperCase()}:</span>
@@ -382,16 +382,16 @@ const ExperimentDetailsPage: React.FC = () => {
                 <div className="mt-2">
                     {Array.from(functionParams.entries()).map(([key, { function: func, kwargs }]) => (
                         <div key={key} className="grid grid-cols-2 gap-2 p-2 border-b last:border-b-0 mb-2 bg-gray-200 rounded-lg items-center">
-                            <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2">
+                            <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2 pr-2 h-full">
                                 <span className="font-semibold">{configTranslations[key] || key.replace(/_/g, ' ').toUpperCase()}:</span>
                                 <span>{func as string}</span>
                             </div>
                             {kwargs && (
-                                <div className="mt-2 ml-4 bg-gray-300 rounded-lg items-center p-2 items-center">
+                                <div className="bg-gray-300 rounded-lg items-center p-2 h-full">
                                     <span className="font-semibold">{configTranslations[key.replace('_function', '_kwargs')] || key.replace('_function', '_KWARGS').toUpperCase()}:</span>
-                                    <div className="ml-4 grid grid-cols-2 gap-2 border-gray-300">
+                                    <div className="ml-1 grid grid-cols-2 gap-2 border-gray-300">
                                         {Object.entries(kwargs).map(([kwargKey, kwargValue]) => (
-                                            <div key={kwargKey} className="flex justify-between bg-gray-400 rounded-lg p-2 items-center">
+                                            <div key={kwargKey} className="flex justify-between bg-gray-400 rounded-lg p-1 items-center pr-2">
                                                 <span className="font-semibold">{configTranslations[kwargKey] || kwargKey}:</span>
                                                 <span>{kwargValue as string}</span>
                                             </div>
