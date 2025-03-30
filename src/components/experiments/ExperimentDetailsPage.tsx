@@ -48,6 +48,15 @@ interface Experiment {
 }
 
 const ExperimentDetailsPage: React.FC = () => {
+    const statusTranslations: Record<string, string> = {
+        created: 'Создан',
+        updated: 'Обновлён',
+        started: 'Запущен',
+        finished: 'Завершён',
+        stopped: 'Остановлен',
+        error: 'Ошибка'
+    };
+
     const {id} = useParams<{ id: string }>();
     const [experiment, setExperiment] = useState<Experiment | null>(null);
     const [newName, setNewName] = useState<string>('');
@@ -158,6 +167,55 @@ const ExperimentDetailsPage: React.FC = () => {
         }
     };
 
+    const exportTaskResult = async (experimentId: number, taskId: number, exportType: string) => {
+        try {
+            const queryParam = {
+                "png_all": "all_workers_png",
+                "png_final": "final_result_png",
+                "csv_all": "csv_all_results",
+                "csv_final": "csv_best_results",
+                "json_all": "json_all_results",
+                "json_final": "json_best_results",
+                "pdf_all": "pdf_results"
+            }[exportType];
+
+            if (!queryParam) {
+                console.error("Некорректный тип экспорта");
+                showNotification("Ошибка: некорректный тип экспорта", "error");
+                return;
+            }
+
+            const params = { [queryParam]: true };
+
+            const response = await axiosInstance.get(
+                `${API_URL}/task_module/experiment/${experimentId}/task/${taskId}/export_result`,
+                { params, responseType: "blob" } // blob нужен для скачивания файлов
+            );
+
+            // Создание ссылки для скачивания файла
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+
+            // Определение имени файла
+            const fileExtension = exportType.includes("png") ? "png" :
+                exportType.includes("csv") ? "csv" :
+                    exportType.includes("json") ? "json" : "pdf";
+
+            link.setAttribute("download", `experiment_${experimentId}_task_${taskId}.${fileExtension}`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showNotification("Файл успешно выгружен!", "success");
+        } catch (error: any) {
+            console.error("Ошибка при экспорте:", error);
+            const errorMessage = `Не удалось выгрузить результаты: ${error.response?.data?.detail}` || "Ошибка при экспорте.";
+            showNotification(errorMessage, "error");
+        }
+    };
+
+
     const updateExperimentName = async () => {
         if (!newName) {
             showNotification("Имя не может быть пустым", "error")
@@ -213,19 +271,85 @@ const ExperimentDetailsPage: React.FC = () => {
         }
     };
 
+    const configTranslations: Record<string, string> = {
+        algorithm: 'Алгоритм',
+        num_islands: 'Количество островов',
+        num_workers: 'Количество рабочих процессов',
+        mutation_rate: 'Вероятность мутации',
+        crossover_rate: 'Вероятность кроссинговера',
+        fitness_kwargs: 'Параметры функции приспособленности',
+        selection_rate: 'Вероятность отбора особей',
+        migration_rate: 'Частота миграции',
+        max_generations: 'Максимальное количество поколений',
+        mutation_kwargs: 'Параметры мутации',
+        population_size: 'Размер популяции',
+        crossover_kwargs: 'Параметры кроссинговера',
+        fitness_function: 'Функция приспособленности',
+        selection_kwargs: 'Параметры селекции',
+        mutation_function: 'Функция мутации',
+        crossover_function: 'Функция кроссинговера',
+        migration_interval: 'Интервал миграции',
+        selection_function: 'Функция селекции',
+        termination_kwargs: 'Параметры завершения',
+        termination_function: 'Функция завершения',
+        initialize_population_kwargs: 'Параметры инициализации популяции',
+        initialize_population_function: 'Функция инициализации популяции',
+        adaptation_kwargs: 'Параметры адаптации',
+    };
+
+    const configOrder: string[] = [
+        'algorithm',
+        'num_islands',
+        'num_workers',
+        'mutation_rate',
+        'crossover_rate',
+        'fitness_kwargs',
+        'selection_rate',
+        'migration_rate',
+        'max_generations',
+        'mutation_kwargs',
+        'population_size',
+        'crossover_kwargs',
+        'fitness_function',
+        'selection_kwargs',
+        'mutation_function',
+        'crossover_function',
+        'migration_interval',
+        'selection_function',
+        'termination_kwargs',
+        'termination_function',
+        'initialize_population_kwargs',
+        'initialize_population_function',
+        'adaptation_kwargs'
+    ];
+
     const renderConfig = (config: any, prefix = '') => {
-        return Object.entries(config).map(([key, value]) => {
+        // Сортируем ключи по порядку из configOrder
+        const sortedEntries = Object.entries(config)
+            .sort(([keyA], [keyB]) => {
+                const indexA = configOrder.indexOf(keyA);
+                const indexB = configOrder.indexOf(keyB);
+                // Если ключа нет в configOrder, ставим его в конец
+                if (indexA === -1 && indexB === -1) return 0;
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+
+        return sortedEntries.map(([key, value]) => {
+            const translatedKey = configTranslations[key] || key.replace(/_/g, ' ').toUpperCase();
+
             if (typeof value === 'object' && value !== null) {
                 return (
                     <div key={prefix + key} className="ml-4">
-                        <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                        <span className="font-semibold">{translatedKey}:</span>
                         <div className="ml-4">{renderConfig(value, `${key}.`)}</div>
                     </div>
                 );
             }
             return (
                 <div key={prefix + key} className="flex justify-between">
-                    <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                    <span className="font-semibold">{translatedKey}:</span>
                     <span>{value as string}</span>
                 </div>
             );
@@ -236,10 +360,50 @@ const ExperimentDetailsPage: React.FC = () => {
         return <div>Загрузка...</div>;
     }
 
+    const ExportButton = ({ experimentId, taskId }: { experimentId: number; taskId: number }) => {
+        const [selectedOption, setSelectedOption] = useState("csv_all");
+
+        const exportOptions = [
+            { value: "png_all", label: "Выгрузить график всех результатов в PNG" },
+            { value: "png_final", label: "Выгрузить график финального результата в PNG" },
+            { value: "csv_all", label: "Выгрузить все результаты в CSV" },
+            { value: "csv_final", label: "Выгрузить финальный результат в CSV" },
+            { value: "json_all", label: "Выгрузить все результаты в JSON" },
+            { value: "json_final", label: "Выгрузить финальный результат в JSON" },
+            { value: "pdf_all", label: "Выгрузить все результаты в PDF" },
+        ];
+
+        const handleExport = () => {
+            exportTaskResult(experimentId, taskId, selectedOption);
+        };
+
+        return (
+            <div className="relative flex items-center">
+                <select
+                    value={selectedOption}
+                    onChange={(e) => setSelectedOption(e.target.value)}
+                    className="border p-2 rounded bg-white text-gray-700 mr-2"
+                >
+                    {exportOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={handleExport}
+                    className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                >
+                    Выгрузить
+                </button>
+            </div>
+        );
+    };
+
     return (
         <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">{experiment.name}</h1>
-            <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {experiment.status}</p>
+            <h1 className="text-2xl font-bold mb-4">Название эксперимента: {experiment.name}</h1>
+            <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {statusTranslations[experiment.status]}</p>
             <p className="text-gray-500">Создан: {new Date(experiment.created_at).toLocaleString()}</p>
             <p className="text-gray-400">Обновлен: {new Date(experiment.updated_at).toLocaleString()}</p>
 
@@ -323,9 +487,10 @@ const ExperimentDetailsPage: React.FC = () => {
                     {experiment.tasks.map((task) => (
                         <div key={task.id} className="border p-4 rounded-lg shadow-lg">
                             <h4 className="font-semibold">Задача ID: {task.id}</h4>
-                            <p className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{task.status}</p>
+                            <p className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{statusTranslations[task.status]}</p>
 
-                            <div className="mt-5">
+                            <div className="mt-2">
+                                <h4 className="text-lg font-semibold mb-4">Конфигурация {task.config.id}: {task.config.name}</h4>
                                 <div className="grid grid-cols-2 gap-2">
                                     {renderConfig(task.config.config)}
                                 </div>
@@ -352,20 +517,7 @@ const ExperimentDetailsPage: React.FC = () => {
                                     </button>
                                 ) : null}
                                 {task.status === 'finished' ? (
-                                <button
-                                    onClick={() => stopTask(experiment.id, task.id)}
-                                    className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-4"
-                                >
-                                    График
-                                </button>
-                                ) : null}
-                                {task.status === 'finished' ? (
-                                <button
-                                    onClick={() => stopTask(experiment.id, task.id)}
-                                    className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-4"
-                                >
-                                    Выгрузить результаты
-                                </button>
+                                    <ExportButton experimentId={experiment.id} taskId={task.id} />
                                 ) : null}
                             </div>
                         </div>

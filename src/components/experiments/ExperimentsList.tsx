@@ -18,6 +18,7 @@ interface TaskConfig {
     selection_function: string;
     termination_function: string;
     initialize_population_function: string;
+
     [key: string]: any;
 }
 
@@ -58,6 +59,15 @@ interface PaginatedResponse {
 }
 
 const ExperimentsList: React.FC = () => {
+    const statusTranslations: Record<string, string> = {
+        created: 'Создан',
+        updated: 'Обновлён',
+        started: 'Запущен',
+        finished: 'Завершён',
+        stopped: 'Остановлен',
+        error: 'Ошибка'
+    };
+
     const [experiments, setExperiments] = useState<Experiment[]>([]);
     const [pagination, setPagination] = useState({
         page: 1,
@@ -91,7 +101,7 @@ const ExperimentsList: React.FC = () => {
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
     const showNotification = (message: string, type: 'success' | 'error') => {
-        setNotification({ message, type });
+        setNotification({message, type});
 
         // Автоматическое скрытие уведомления через 5 секунд
         setTimeout(() => {
@@ -129,8 +139,19 @@ const ExperimentsList: React.FC = () => {
         }
     };
 
+    const filters = {
+        search: searchQuery,
+        experimentStatus: Array.from(statusFilters.experimentStatus),
+        taskStatus: Array.from(statusFilters.taskStatus),
+        createdFrom: dateFilters.createdFrom,
+        createdTo: dateFilters.createdTo,
+        updatedFrom: dateFilters.updatedFrom,
+        updatedTo: dateFilters.updatedTo,
+        configIds: configIds.split(',').map(id => id.trim()),
+    };
+
     useEffect(() => {
-        fetchExperiments(pagination.page, pagination.page_size, {search: searchQuery});
+        fetchExperiments(pagination.page, pagination.page_size, filters);
     }, [pagination.page, pagination.page_size, searchQuery]);
 
     const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -289,31 +310,103 @@ const ExperimentsList: React.FC = () => {
         if (isExpandedAll) {
             // Если все развернуты, сворачиваем их
             setExpandedExperiments(new Set());
+            setExpandedTasks(new Set()); // Сворачиваем все задачи
         } else {
             // Если не все развернуты, разворачиваем все
             setExpandedExperiments(new Set(experiments.map(experiment => experiment.id)));
+
+            // Разворачиваем все задачи, которые связаны с экспериментами
+            const allTaskIds = experiments.flatMap(experiment => experiment.tasks.map(task => task.id));
+            setExpandedTasks(new Set(allTaskIds)); // Разворачиваем все задачи
         }
         setIsExpandedAll(prevState => !prevState); // Переключаем флаг
     };
 
+    const configTranslations: Record<string, string> = {
+        algorithm: 'Алгоритм',
+        num_islands: 'Количество островов',
+        num_workers: 'Количество рабочих процессов',
+        mutation_rate: 'Вероятность мутации',
+        crossover_rate: 'Вероятность кроссинговера',
+        fitness_kwargs: 'Параметры функции приспособленности',
+        selection_rate: 'Вероятность отбора особей',
+        migration_rate: 'Частота миграции',
+        max_generations: 'Максимальное количество поколений',
+        mutation_kwargs: 'Параметры мутации',
+        population_size: 'Размер популяции',
+        crossover_kwargs: 'Параметры кроссинговера',
+        fitness_function: 'Функция приспособленности',
+        selection_kwargs: 'Параметры селекции',
+        mutation_function: 'Функция мутации',
+        crossover_function: 'Функция кроссинговера',
+        migration_interval: 'Интервал миграции',
+        selection_function: 'Функция селекции',
+        termination_kwargs: 'Параметры завершения',
+        termination_function: 'Функция завершения',
+        initialize_population_kwargs: 'Параметры инициализации популяции',
+        initialize_population_function: 'Функция инициализации популяции',
+        adaptation_kwargs: 'Параметры адаптации',
+    };
+
+    const configOrder: string[] = [
+        'algorithm',
+        'num_islands',
+        'num_workers',
+        'mutation_rate',
+        'crossover_rate',
+        'fitness_kwargs',
+        'selection_rate',
+        'migration_rate',
+        'max_generations',
+        'mutation_kwargs',
+        'population_size',
+        'crossover_kwargs',
+        'fitness_function',
+        'selection_kwargs',
+        'mutation_function',
+        'crossover_function',
+        'migration_interval',
+        'selection_function',
+        'termination_kwargs',
+        'termination_function',
+        'initialize_population_kwargs',
+        'initialize_population_function',
+        'adaptation_kwargs'
+    ];
+
     const renderConfig = (config: any, prefix = '') => {
-        return Object.entries(config).map(([key, value]) => {
+        // Сортируем ключи по порядку из configOrder
+        const sortedEntries = Object.entries(config)
+            .sort(([keyA], [keyB]) => {
+                const indexA = configOrder.indexOf(keyA);
+                const indexB = configOrder.indexOf(keyB);
+                // Если ключа нет в configOrder, ставим его в конец
+                if (indexA === -1 && indexB === -1) return 0;
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+
+        return sortedEntries.map(([key, value]) => {
+            const translatedKey = configTranslations[key] || key.replace(/_/g, ' ').toUpperCase();
+
             if (typeof value === 'object' && value !== null) {
                 return (
                     <div key={prefix + key} className="ml-4">
-                        <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                        <span className="font-semibold">{translatedKey}:</span>
                         <div className="ml-4">{renderConfig(value, `${key}.`)}</div>
                     </div>
                 );
             }
             return (
                 <div key={prefix + key} className="flex justify-between">
-                    <span className="font-semibold">{prefix + key.replace('_', ' ').toUpperCase()}:</span>
+                    <span className="font-semibold">{translatedKey}:</span>
                     <span>{value as string}</span>
                 </div>
             );
         });
     };
+
 
     return (
         <div className="container mx-auto p-4">
@@ -363,7 +456,7 @@ const ExperimentsList: React.FC = () => {
             <div className="flex space-x-4">
                 <div className="flex-1 ">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-2xl font-bold mb-2">Список эпериментов</h1>
+                        <h1 className="text-2xl font-bold mb-2">Список экспериментов</h1>
 
                         <button
                             onClick={toggleExpandCollapseAll}
@@ -393,7 +486,7 @@ const ExperimentsList: React.FC = () => {
                                             checked={selectedExperiments.has(experiment.id)}
                                             onChange={() => toggleExperimentSelection(experiment.id)}
                                         />
-                                        <h2 className="text-xl font-semibold">{experiment.name}</h2>
+                                        <h2 className="text-xl font-semibold">{experiment.id} / {experiment.name}</h2>
                                     </div>
                                     <div className="flex space-x-4">
                                         <button
@@ -413,7 +506,7 @@ const ExperimentsList: React.FC = () => {
 
                                 {expandedExperiments.has(experiment.id) && (
                                     <div className="mt-2">
-                                        <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {experiment.status}</p>
+                                        <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {statusTranslations[experiment.status]}</p>
                                         <p className="text-gray-400">Создан: {new Date(experiment.created_at).toLocaleString()}</p>
                                     </div>
                                 )}
@@ -427,7 +520,7 @@ const ExperimentsList: React.FC = () => {
                                                     <div className="flex justify-between">
                                                         <span>Задача ID: {task.id}</span>
                                                         <span
-                                                            className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{task.status}</span>
+                                                            className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{statusTranslations[task.status]}</span>
                                                         <button
                                                             onClick={() => toggleTaskExpansion(task.id)}
                                                             className="text-blue-500"
@@ -438,8 +531,7 @@ const ExperimentsList: React.FC = () => {
 
                                                     {expandedTasks.has(task.id) && (
                                                         <div className="mt-2">
-                                                            <h4 className="text-lg font-semibold mb-8">Конфигурация
-                                                                задачи:</h4>
+                                                            <h4 className="text-lg font-semibold mb-4">Конфигурация {task.config.id}: {task.config.name}</h4>
                                                             <div className="grid grid-cols-2 gap-2">
                                                                 {renderConfig(task.config.config)}
                                                             </div>
@@ -470,7 +562,7 @@ const ExperimentsList: React.FC = () => {
                                             onChange={() => handleStatusChange('experimentStatus', status)}
                                             className="mr-2"
                                         />
-                                        {status}
+                                        {statusTranslations[status]}
                                     </label>
                                 ))}
                             </div>
@@ -478,35 +570,58 @@ const ExperimentsList: React.FC = () => {
 
                         <div>
                             <h3 className="font-semibold">Дата создания</h3>
-                            <input
-                                type="date"
-                                className="border p-2 rounded mb-2 w-full"
-                                value={dateFilters.createdFrom}
-                                onChange={(e) => setDateFilters({...dateFilters, createdFrom: e.target.value})}
-                            />
-                            <input
-                                type="date"
-                                className="border p-2 rounded w-full"
-                                value={dateFilters.createdTo}
-                                onChange={(e) => setDateFilters({...dateFilters, createdTo: e.target.value})}
-                            />
+                            <div className="flex flex-col space-y-2">
+                                <div className="flex items-center space-x-2">
+                                    <span className="w-6">от:</span>
+                                    <input
+                                        type="date"
+                                        className="border p-2 rounded mb-2 w-full"
+                                        value={dateFilters.createdFrom}
+                                        onChange={(e) => setDateFilters({...dateFilters, createdFrom: e.target.value})}
+                                    />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <span className="w-6">до:</span>
+                                    <input
+                                        type="date"
+                                        className="border p-2 rounded w-full"
+                                        value={dateFilters.createdTo}
+                                        onChange={(e) => setDateFilters({...dateFilters, createdTo: e.target.value})}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <div>
                             <h3 className="font-semibold">Дата обновления</h3>
-                            <input
-                                type="date"
-                                className="border p-2 rounded mb-2 w-full"
-                                value={dateFilters.updatedFrom}
-                                onChange={(e) => setDateFilters({...dateFilters, updatedFrom: e.target.value})}
-                            />
-                            <input
-                                type="date"
-                                className="border p-2 rounded w-full"
-                                value={dateFilters.updatedTo}
-                                onChange={(e) => setDateFilters({...dateFilters, updatedTo: e.target.value})}
-                            />
+                            <div className="flex flex-col space-y-2">
+                                <div className="flex items-center space-x-2">
+                                    <span className="w-6">от:</span>
+                                    <input
+                                        type="date"
+                                        className="border p-2 rounded w-full"
+                                        value={dateFilters.updatedFrom}
+                                        onChange={(e) => setDateFilters({
+                                            ...dateFilters,
+                                            updatedFrom: e.target.value
+                                        })}
+                                    />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <span className="w-6">до:</span>
+                                    <input
+                                        type="date"
+                                        className="border p-2 rounded w-full"
+                                        value={dateFilters.updatedTo}
+                                        onChange={(e) => setDateFilters({
+                                            ...dateFilters,
+                                            updatedTo: e.target.value
+                                        })}
+                                    />
+                                </div>
+                            </div>
                         </div>
+
 
                         <div>
                             <h3 className="font-semibold">Статус задачи</h3>
@@ -519,7 +634,7 @@ const ExperimentsList: React.FC = () => {
                                             checked={statusFilters.taskStatus.has(status)}
                                             onChange={() => handleStatusChange('taskStatus', status)}
                                             className="mr-2"/>
-                                        {status}
+                                        {statusTranslations[status]}
                                     </label>
                                 ))}
                             </div>
@@ -530,6 +645,7 @@ const ExperimentsList: React.FC = () => {
                             <input
                                 type="text"
                                 className="border p-2 rounded w-full"
+                                placeholder="Введите ID конфигурации"
                                 value={configIds}
                                 onChange={(e) => setConfigIds(e.target.value)}
                             />
