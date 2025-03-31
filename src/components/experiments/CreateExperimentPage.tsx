@@ -11,7 +11,7 @@ const CreateExperimentPage: React.FC = () => {
         fetchModelTranslations()
             .then(translations => setModelTranslations(translations));
     }, []);
-    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ').toUpperCase();
+    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
 
     const [name, setName] = useState('');
     const [configs, setConfigs] = useState<any[]>([]);
