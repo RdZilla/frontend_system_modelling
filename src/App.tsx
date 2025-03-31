@@ -41,6 +41,12 @@ const App: React.FC = () => {
                     <PrivateRoute>
                         <UserConfigPage />
                     </PrivateRoute>} />
+
+                <Route path="/configuration/:id" element={
+                    <PrivateRoute>
+                        <UserConfigPage />
+                    </PrivateRoute>} />
+
                 <Route path="/function" element={
                     <PrivateRoute>
                         <CustomFunctionsPage />

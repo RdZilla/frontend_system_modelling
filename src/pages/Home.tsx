@@ -6,6 +6,9 @@ const Home: React.FC = () => {
     useEffect(() => {
         document.title = 'Дашборд';
     }, []);
+
+
+
     return (
         <div className="min-h-screen bg-gray-100">
             <Navbar />

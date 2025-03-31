@@ -246,7 +246,6 @@ const ExperimentsList: React.FC = () => {
 
     const totalPages = Math.ceil(pagination.total / pagination.page_size);
 
-
     const handleResetFilters = () => {
         // Очистка текстового поиска
         setSearchQuery('');
@@ -320,8 +319,6 @@ const ExperimentsList: React.FC = () => {
         }
         setIsExpandedAll(prevState => !prevState); // Переключаем флаг
     };
-
-
 
     const configOrder: string[] = [
         'algorithm',
@@ -398,7 +395,7 @@ const ExperimentsList: React.FC = () => {
                     {normalParams.map(([key, value]) => (
                         <div key={prefix + key} className="flex justify-between items-center border-b last:border-b-0 p-2 bg-gray-300 rounded-lg">
                             <span className="font-semibold ">{translate(key)}:</span>
-                            <span>{modelTranslations[value as string] || value}</span>
+                            <span>{translate(value as string)}</span>
                         </div>
                     ))}
                 </div>
