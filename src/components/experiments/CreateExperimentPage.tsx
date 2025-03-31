@@ -1,40 +1,17 @@
 import React, {useState, useEffect} from 'react';
 import axiosInstance from "../auth/axiosInstance.ts";
 import {useNavigate} from 'react-router-dom';
+import {fetchModelTranslations} from "../../api/getTranslation.tsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const CreateExperimentPage: React.FC = () => {
-    const configTranslations: Record<string, string> = {
-        adaptation_kwargs: 'Параметры адаптации',
-        algorithm: 'Алгоритм',
-        num_islands: 'Количество островов',
-        num_workers: 'Количество рабочих процессов',
-        mutation_rate: 'Вероятность мутации',
-        crossover_rate: 'Вероятность кроссинговера',
-        fitness_kwargs: 'Параметры функции приспособленности',
-        selection_rate: 'Вероятность отбора особей',
-        migration_rate: 'Частота миграции',
-        max_generations: 'Максимальное количество поколений',
-        mutation_kwargs: 'Параметры мутации',
-        population_size: 'Размер популяции',
-        crossover_kwargs: 'Параметры кроссинговера',
-        fitness_function: 'Функция приспособленности',
-        selection_kwargs: 'Параметры селекции',
-        mutation_function: 'Функция мутации',
-        crossover_function: 'Функция кроссинговера',
-        migration_interval: 'Интервал миграции',
-        selection_function: 'Функция селекции',
-        termination_kwargs: 'Параметры завершения',
-        termination_function: 'Функция завершения',
-        initialize_population_kwargs: 'Параметры инициализации популяции',
-        initialize_population_function: 'Функция инициализации популяции',
-    };
-    const modelTranslations: Record<string, string> = {
-        master_worker: 'Мастер воркер модель',
-        island_model: 'Островная модель',
-        asynchronous_model: 'Асинхронная модель',
-    };
+    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
+    useEffect(() => {
+        fetchModelTranslations()
+            .then(translations => setModelTranslations(translations));
+    }, []);
+    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ').toUpperCase();
 
     const [name, setName] = useState('');
     const [configs, setConfigs] = useState<any[]>([]);
@@ -161,7 +138,7 @@ const CreateExperimentPage: React.FC = () => {
                                         {
                                             Object.keys(algorithms).map((algorithm) => (
                                                 <option key={algorithm}
-                                                        value={algorithm}> {modelTranslations[algorithm]} </option>
+                                                        value={algorithm}> {translate(algorithm)} </option>
                                             ))
                                         }
                                     </select>
@@ -177,7 +154,7 @@ const CreateExperimentPage: React.FC = () => {
                                     'selection_function'
                                 ].includes(param)).map((param: string) => (
                                     <div key={param} className="mb-4">
-                                        <label className="block text-sm mb-1">{configTranslations[param] || param.replace(/_/g, ' ').toUpperCase()}</label>
+                                        <label className="block text-sm mb-1">{translate(param)}</label>
                                         <input
                                             type="text"
                                             className="border p-2 rounded w-full"

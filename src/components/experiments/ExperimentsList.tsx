@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import axiosInstance from "../auth/axiosInstance.ts";
 import {Link} from "react-router-dom";
+import {fetchModelTranslations} from "../../api/getTranslation.tsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -59,19 +60,12 @@ interface PaginatedResponse {
 }
 
 const ExperimentsList: React.FC = () => {
-    const statusTranslations: Record<string, string> = {
-        created: 'Создан',
-        updated: 'Обновлён',
-        started: 'Запущен',
-        finished: 'Завершён',
-        stopped: 'Остановлен',
-        error: 'Ошибка'
-    };
-    const modelTranslations: Record<string, string> = {
-        master_worker: 'Мастер воркер модель',
-        island_model: 'Островная модель',
-        asynchronous_model: 'Асинхронная модель',
-    };
+    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
+    useEffect(() => {
+        fetchModelTranslations()
+            .then(translations => setModelTranslations(translations));
+    }, []);
+    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ').toUpperCase();
 
     const [experiments, setExperiments] = useState<Experiment[]>([]);
     const [pagination, setPagination] = useState({
@@ -327,32 +321,7 @@ const ExperimentsList: React.FC = () => {
         setIsExpandedAll(prevState => !prevState); // Переключаем флаг
     };
 
-    const configTranslations: Record<string, string> = {
-        algorithm: 'Алгоритм',
-        num_islands: 'Количество островов',
-        num_workers: 'Количество рабочих процессов',
-        mutation_rate: 'Вероятность мутации',
-        crossover_rate: 'Вероятность кроссинговера',
-        fitness_kwargs: 'Параметры функции приспособленности',
-        selection_rate: 'Вероятность отбора особей',
-        migration_rate: 'Частота миграции',
-        max_generations: 'Максимальное количество поколений',
-        mutation_kwargs: 'Параметры мутации',
-        population_size: 'Размер популяции',
-        crossover_kwargs: 'Параметры кроссинговера',
-        fitness_function: 'Функция приспособленности',
-        selection_kwargs: 'Параметры селекции',
-        mutation_function: 'Функция мутации',
-        crossover_function: 'Функция кроссинговера',
-        migration_interval: 'Интервал миграции',
-        selection_function: 'Функция селекции',
-        termination_kwargs: 'Параметры завершения',
-        termination_function: 'Функция завершения',
-        initialize_population_kwargs: 'Параметры инициализации популяции',
-        initialize_population_function: 'Функция инициализации популяции',
-        adaptation_function: 'Функция адаптации',
-        adaptation_kwargs: 'Параметры адаптации',
-    };
+
 
     const configOrder: string[] = [
         'algorithm',
@@ -428,7 +397,7 @@ const ExperimentsList: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2 items-center pb-2 border-b-2 border-black">
                     {normalParams.map(([key, value]) => (
                         <div key={prefix + key} className="flex justify-between items-center border-b last:border-b-0 p-2 bg-gray-300 rounded-lg">
-                            <span className="font-semibold ">{configTranslations[key] || key.replace(/_/g, ' ').toUpperCase()}:</span>
+                            <span className="font-semibold ">{translate(key)}:</span>
                             <span>{modelTranslations[value as string] || value}</span>
                         </div>
                     ))}
@@ -439,16 +408,16 @@ const ExperimentsList: React.FC = () => {
                     {Array.from(functionParams.entries()).map(([key, { function: func, kwargs }]) => (
                         <div key={key} className="grid grid-cols-2 gap-2 p-2 border-b last:border-b-0 mb-2 bg-gray-200 rounded-lg items-center">
                             <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2 pr-2 h-full">
-                                <span className="font-semibold">{configTranslations[key] || key.replace(/_/g, ' ').toUpperCase()}:</span>
+                                <span className="font-semibold">{translate(key)}:</span>
                                 <span>{func as string}</span>
                             </div>
                             {kwargs && (
                                 <div className="bg-gray-300 rounded-lg items-center p-2 h-full">
-                                    <span className="font-semibold">{configTranslations[key.replace('_function', '_kwargs')] || key.replace('_function', '_KWARGS').toUpperCase()}:</span>
+                                    <span className="font-semibold">{translate(key.replace('_function', '_kwargs'))}:</span>
                                     <div className="ml-1 grid grid-cols-2 gap-2 border-gray-300">
                                         {Object.entries(kwargs).map(([kwargKey, kwargValue]) => (
                                             <div key={kwargKey} className="flex justify-between bg-gray-400 rounded-lg p-1 items-center pr-2">
-                                                <span className="font-semibold">{configTranslations[kwargKey] || kwargKey}:</span>
+                                                <span className="font-semibold">{translate(kwargKey)}:</span>
                                                 <span>{kwargValue as string}</span>
                                             </div>
                                         ))}
@@ -561,7 +530,7 @@ const ExperimentsList: React.FC = () => {
 
                                 {expandedExperiments.has(experiment.id) && (
                                     <div className="mt-2">
-                                        <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {statusTranslations[experiment.status]}</p>
+                                        <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {translate(experiment.status)}</p>
                                         <p className="text-gray-400">Создан: {new Date(experiment.created_at).toLocaleString()}</p>
                                     </div>
                                 )}
@@ -575,7 +544,7 @@ const ExperimentsList: React.FC = () => {
                                                     <div className="flex justify-between">
                                                         <span>Задача ID: {task.id}</span>
                                                         <span
-                                                            className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{statusTranslations[task.status]}</span>
+                                                            className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{translate(task.status)}</span>
                                                         <button
                                                             onClick={() => toggleTaskExpansion(task.id)}
                                                             className="text-blue-500"
@@ -617,7 +586,7 @@ const ExperimentsList: React.FC = () => {
                                             onChange={() => handleStatusChange('experimentStatus', status)}
                                             className="mr-2"
                                         />
-                                        {statusTranslations[status]}
+                                        {translate(status)}
                                     </label>
                                 ))}
                             </div>
@@ -689,7 +658,7 @@ const ExperimentsList: React.FC = () => {
                                             checked={statusFilters.taskStatus.has(status)}
                                             onChange={() => handleStatusChange('taskStatus', status)}
                                             className="mr-2"/>
-                                        {statusTranslations[status]}
+                                        {translate(status)}
                                     </label>
                                 ))}
                             </div>
