@@ -83,13 +83,6 @@ interface PaginatedResponseConfig {
 
 
 const Dashboard: React.FC = () => {
-    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
-    useEffect(() => {
-        fetchModelTranslations()
-            .then(translations => setModelTranslations(translations));
-    }, []);
-    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ').toUpperCase();
-
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
     const showNotification = (message: string, type: 'success' | 'error') => {
         setNotification({message, type});
@@ -100,13 +93,20 @@ const Dashboard: React.FC = () => {
         }, 5000);
     };
 
-    // const [pagination, setPagination] = useState({
-    //     page: 1,
-    //     page_size: 10,
-    //     total: 0,
-    //     next: null,
-    //     previous: null,
-    // });
+    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
+    useEffect(() => {
+        const fetchTranslate = async () =>{
+            try {
+                fetchModelTranslations()
+                    .then(translations => setModelTranslations(translations));
+            } catch (error: any) {
+                showNotification(`Ошибка при открытии эксперимента: ${error.response?.data?.detail}` || 'Ошибка при создании эксперимента', 'error');
+                return {};
+            }
+        }
+        fetchTranslate();
+    }, []);
+    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
 
     const [experiments, setExperiments] = useState<Experiment[]>([]);
     const [startedTasks, setStartedTasks] = useState<Task[]>([]);
@@ -125,17 +125,7 @@ const Dashboard: React.FC = () => {
             );
 
             setExperiments(response.data.results);
-            // setPagination({
-            //     page: response.data.page,
-            //     page_size: response.data.page_size,
-            //     total: response.data.total,
-            //     // @ts-ignore
-            //     next: response.data.links.next,
-            //     // @ts-ignore
-            //     previous: response.data.links.previous,
-            // });
         } catch (error: any) {
-            console.error('Error fetching experiments:', error);
             const errorMessage = `Ошибка при загрузке: ${error.response?.data?.detail}` || 'Ошибка при загрузке.';
             showNotification(errorMessage, "error")
         }
@@ -164,7 +154,6 @@ const Dashboard: React.FC = () => {
             //     previous: response.data.links.previous,
             // });
         } catch (error: any) {
-            console.error('Error fetching started tasks:', error);
             const errorMessage = `Ошибка при загрузке: ${error.response?.data?.detail}` || 'Ошибка при загрузке.';
             showNotification(errorMessage, "error")
         }
@@ -193,7 +182,6 @@ const Dashboard: React.FC = () => {
             //     previous: response.data.links.previous,
             // });
         } catch (error: any) {
-            console.error('Error fetching started task cofigs:', error);
             const errorMessage = `Ошибка при загрузке: ${error.response?.data?.detail}` || 'Ошибка при загрузке.';
             showNotification(errorMessage, "error")
         }
@@ -225,7 +213,7 @@ const Dashboard: React.FC = () => {
             )}
             <div className="col-span-2 space-y-4 ">
                 <div className="bg-white shadow rounded p-4">
-                    <h2 className="text-xl font-bold mb-2">Эксперименты</h2>
+                    <h1 className="text-xl font-bold mb-2">Эксперименты</h1>
                     <div className="space-y-4">
                         {experiments.map((experiment) => (
                             <div key={experiment.id} className="border p-4 rounded-lg shadow-md">

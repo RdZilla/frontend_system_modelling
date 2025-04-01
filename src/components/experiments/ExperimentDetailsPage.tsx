@@ -8,7 +8,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 interface TaskConfig {
     algorithm: string;
     num_workers: number;
-    chrom_length: number;
     mutation_rate: number;
     crossover_rate: number;
     selection_rate: number;
@@ -49,13 +48,6 @@ interface Experiment {
 }
 
 const ExperimentDetailsPage: React.FC = () => {
-    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
-    useEffect(() => {
-        fetchModelTranslations()
-            .then(translations => setModelTranslations(translations));
-    }, []);
-    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
-
     const {id} = useParams<{ id: string }>();
     const [experiment, setExperiment] = useState<Experiment | null>(null);
     const [newName, setNewName] = useState<string>('');
@@ -71,6 +63,21 @@ const ExperimentDetailsPage: React.FC = () => {
         }, 5000);
     };
 
+    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
+    useEffect(() => {
+        const fetchTranslate = async () =>{
+            try {
+                fetchModelTranslations()
+                    .then(translations => setModelTranslations(translations));
+            } catch (error: any) {
+                showNotification(`Ошибка при открытии эксперимента: ${error.response?.data?.detail}` || 'Ошибка при создании эксперимента', 'error');
+                return {};
+            }
+        }
+        fetchTranslate();
+    }, []);
+    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -81,8 +88,9 @@ const ExperimentDetailsPage: React.FC = () => {
                 );
                 setExperiment(response.data);
                 setNewName(response.data.name);
-            } catch (error) {
-                console.error('Error fetching experiment details:', error);
+            } catch (error: any) {
+                showNotification(`Ошибка при открытии эксперимента: ${error.response?.data?.detail}` || 'Ошибка при создании эксперимента', 'error');
+                return {};
             }
         };
 
@@ -105,7 +113,6 @@ const ExperimentDetailsPage: React.FC = () => {
                 )
             } : prev);
         } catch (error: any) {
-            console.error('Error starting task:', error);
             const errorMessage = `Не удалось запустить задачу: ${error.response?.data?.detail}` || 'Не удалось запустить задачу.';
             showNotification(errorMessage, "error")
         }
@@ -121,7 +128,6 @@ const ExperimentDetailsPage: React.FC = () => {
             );
             showNotification('Эксперимент успешно запущен!', 'success');
         } catch (error: any) {
-            console.error('Error starting experiment:', error);
             const errorMessage = `Не удалось запустить эксперимент: ${error.response?.data?.detail}` || 'Не удалось запустить эксперимент.';
             showNotification(errorMessage, "error")
         }
@@ -137,7 +143,6 @@ const ExperimentDetailsPage: React.FC = () => {
             );
             showNotification('Эксперимент успешно остановлен!', 'success');
         } catch (error: any) {
-            console.error('Error stopping experiment:', error);
             const errorMessage = `Не удалось остановить эксперимент: ${error.response?.data?.detail}` || 'Не удалось запустить эксперимент.';
             showNotification(errorMessage, "error")
         }
@@ -160,7 +165,6 @@ const ExperimentDetailsPage: React.FC = () => {
                 )
             } : prev);
         } catch (error: any) {
-            console.error('Error stopping task:', error);
             const errorMessage = `Не удалось остановить задачу: ${error.response?.data?.detail}` || 'Не удалось остановить задачу.';
             showNotification(errorMessage, "error")
         }
@@ -179,16 +183,15 @@ const ExperimentDetailsPage: React.FC = () => {
             }[exportType];
 
             if (!queryParam) {
-                console.error("Некорректный тип экспорта");
                 showNotification("Ошибка: некорректный тип экспорта", "error");
                 return;
             }
 
-            const params = { [queryParam]: true };
+            const params = {[queryParam]: true};
 
             const response = await axiosInstance.get(
                 `${API_URL}/task_module/experiment/${experimentId}/task/${taskId}/export_result`,
-                { params, responseType: "blob" } // blob нужен для скачивания файлов
+                {params, responseType: "blob"} // blob нужен для скачивания файлов
             );
 
             // Создание ссылки для скачивания файла
@@ -208,7 +211,6 @@ const ExperimentDetailsPage: React.FC = () => {
 
             showNotification("Файл успешно выгружен!", "success");
         } catch (error: any) {
-            console.error("Ошибка при экспорте:", error);
             const errorMessage = `Не удалось выгрузить результаты: ${error.response?.data?.detail}` || "Ошибка при экспорте.";
             showNotification(errorMessage, "error");
         }
@@ -229,7 +231,6 @@ const ExperimentDetailsPage: React.FC = () => {
             setIsEditing(false);
             showNotification('Имя эксперимента успешно обновлено!', 'success');
         } catch (error: any) {
-            console.error('Error updating experiment name:', error);
             const errorMessage = `Не удалось обновить имя эксперимента: ${error.response?.data?.detail}` || 'Не удалось обновить имя эксперимента.';
             showNotification(errorMessage, "error")
         }
@@ -243,7 +244,6 @@ const ExperimentDetailsPage: React.FC = () => {
             showNotification('Эксперимент успешно удален!', 'success');
             navigate('/experiment');
         } catch (error: any) {
-            console.error('Error deleting experiment:', error);
             const errorMessage = `Не удалось удалить эксперимент: ${error.response?.data?.detail}` || 'Не удалось удалить эксперимент.';
             showNotification(errorMessage, "error")
         }
@@ -269,7 +269,6 @@ const ExperimentDetailsPage: React.FC = () => {
                 return 'bg-gray-300';
         }
     };
-
 
 
     const configOrder: string[] = [
@@ -327,13 +326,13 @@ const ExperimentDetailsPage: React.FC = () => {
 
         sortedEntries.forEach(([key, value]) => {
             if (key.endsWith('_function')) {
-                functionParams.set(key, { function: value, kwargs: null });
+                functionParams.set(key, {function: value, kwargs: null});
             } else if (key.endsWith('_kwargs')) {
                 const functionKey = key.replace('_kwargs', '_function');
                 if (functionParams.has(functionKey)) {
                     functionParams.get(functionKey).kwargs = value;
                 } else {
-                    functionParams.set(functionKey, { function: null, kwargs: value });
+                    functionParams.set(functionKey, {function: null, kwargs: value});
                 }
             } else {
                 normalParams.push([key, value]);
@@ -343,9 +342,10 @@ const ExperimentDetailsPage: React.FC = () => {
         return (
             <>
                 {/* Обычные параметры в две колонки */}
-                <div className="grid grid-cols-2 gap-2 items-center pb-2 border-b-2 border-black">
+                <div className="grid grid-cols-2 gap-2 items-center pb-2 border-b-2 border-rgb(209 209 209)">
                     {normalParams.map(([key, value]) => (
-                        <div key={prefix + key} className="flex justify-between items-center border-b last:border-b-0 p-2 bg-gray-300 rounded-lg">
+                        <div key={prefix + key}
+                             className="flex justify-between items-center border-b p-2 bg-gray-300 rounded-lg">
                             <span className="font-semibold ">{translate(key)}:</span>
                             <span>{translate(value as string)}</span>
                         </div>
@@ -354,20 +354,22 @@ const ExperimentDetailsPage: React.FC = () => {
 
                 {/* Группировка функций и kwargs */}
                 <div className="mt-2">
-                    {Array.from(functionParams.entries()).map(([key, { function: func, kwargs }]) => (
-                        <div key={key} className="grid grid-cols-2 gap-2 p-2 border-b last:border-b-0 mb-2 bg-gray-200 rounded-lg items-center">
-                            <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2 pr-2 h-full">
-                                <span className="font-semibold">{translate(key)}:</span>
-                                <span>{func as string}</span>
+                    {Array.from(functionParams.entries()).map(([key, {function: func, kwargs}]) => (
+                        <div key={key} className="grid grid-cols-2 gap-2 mb-2 rounded-lg items-center">
+                            <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2 h-full">
+                                <span className="font-semibold mr-1">{translate(key)}:</span>
+                                <span className="flex items-center text-right">{translate(func as string)}</span>
                             </div>
                             {kwargs && (
                                 <div className="bg-gray-300 rounded-lg items-center p-2 h-full">
-                                    <span className="font-semibold">{translate(key.replace('_function', '_kwargs'))}:</span>
+                                    <span
+                                        className="font-semibold">{translate(key.replace('_function', '_kwargs'))}:</span>
                                     <div className="ml-1 grid grid-cols-2 gap-2 border-gray-300">
                                         {Object.entries(kwargs).map(([kwargKey, kwargValue]) => (
-                                            <div key={kwargKey} className="flex justify-between bg-gray-400 rounded-lg p-1 items-center pr-2">
-                                                <span className="font-semibold">{translate(kwargKey)}:</span>
-                                                <span>{kwargValue as string}</span>
+                                            <div key={kwargKey}
+                                                 className="flex justify-between bg-gray-200 rounded-lg p-1 items-center pr-2">
+                                                <span className="font-semibold ">{translate(kwargKey)}:</span>
+                                                <span>{translate(kwargValue as string)}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -384,17 +386,17 @@ const ExperimentDetailsPage: React.FC = () => {
         return <div>Загрузка...</div>;
     }
 
-    const ExportButton = ({ experimentId, taskId }: { experimentId: number; taskId: number }) => {
+    const ExportButton = ({experimentId, taskId}: { experimentId: number; taskId: number }) => {
         const [selectedOption, setSelectedOption] = useState("csv_all");
 
         const exportOptions = [
-            { value: "png_all", label: "Выгрузить график всех результатов в PNG" },
-            { value: "png_final", label: "Выгрузить график финального результата в PNG" },
-            { value: "csv_all", label: "Выгрузить все результаты в CSV" },
-            { value: "csv_final", label: "Выгрузить финальный результат в CSV" },
-            { value: "json_all", label: "Выгрузить все результаты в JSON" },
-            { value: "json_final", label: "Выгрузить финальный результат в JSON" },
-            { value: "pdf_all", label: "Выгрузить все результаты в PDF" },
+            {value: "png_all", label: "Выгрузить график всех результатов в PNG"},
+            {value: "png_final", label: "Выгрузить график финального результата в PNG"},
+            {value: "csv_all", label: "Выгрузить все результаты в CSV"},
+            {value: "csv_final", label: "Выгрузить финальный результат в CSV"},
+            {value: "json_all", label: "Выгрузить все результаты в JSON"},
+            {value: "json_final", label: "Выгрузить финальный результат в JSON"},
+            {value: "pdf_all", label: "Выгрузить все результаты в PDF"},
         ];
 
         const handleExport = () => {
@@ -541,7 +543,7 @@ const ExperimentDetailsPage: React.FC = () => {
                                     </button>
                                 ) : null}
                                 {task.status === 'finished' ? (
-                                    <ExportButton experimentId={experiment.id} taskId={task.id} />
+                                    <ExportButton experimentId={experiment.id} taskId={task.id}/>
                                 ) : null}
                             </div>
                         </div>

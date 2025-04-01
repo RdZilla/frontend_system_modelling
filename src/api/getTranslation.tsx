@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
+
 export const fetchModelTranslations = async (): Promise<Record<string, string>> => {
     try {
         const response = await fetch(`${API_URL}/task_module/translations`);
@@ -13,7 +14,6 @@ export const fetchModelTranslations = async (): Promise<Record<string, string>> 
             Object.entries(data).map(([key, value]) => [key, String(value)])
         );
     } catch (error) {
-        console.error("Ошибка при получении переводов:", error);
-        return {};
+        throw error;
     }
 };

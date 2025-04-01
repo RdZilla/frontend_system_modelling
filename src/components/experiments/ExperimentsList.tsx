@@ -60,13 +60,6 @@ interface PaginatedResponse {
 }
 
 const ExperimentsList: React.FC = () => {
-    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
-    useEffect(() => {
-        fetchModelTranslations()
-            .then(translations => setModelTranslations(translations));
-    }, []);
-    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
-
     const [experiments, setExperiments] = useState<Experiment[]>([]);
     const [pagination, setPagination] = useState({
         page: 1,
@@ -132,7 +125,6 @@ const ExperimentsList: React.FC = () => {
                 previous: response.data.links.previous,
             });
         } catch (error: any) {
-            console.error('Error fetching experiments:', error);
             const errorMessage = `Ошибка при загрузке: ${error.response?.data?.detail}` || 'Ошибка при загрузке.';
             showNotification(errorMessage, "error")
         }
@@ -236,10 +228,9 @@ const ExperimentsList: React.FC = () => {
                 `${API_URL}/task_module/multiple_launch`,
                 {experiment_ids: selectedIds}
             );
-            console.log(response.data);
+            showNotification(response?.data?.detail || 'Успешно запущено', 'success');
         } catch (error: any) {
-            console.error('Error during multiple launch:', error);
-            const errorMessage = `Ошибка при групповом запуске: ${error.response?.data?.detail}` || 'Ошибка при групповом запуске.';
+            const errorMessage = `Ошибка при групповом запуске: ${error.response?.data?.detail}` || 'Ошибка при групповом запуске';
             showNotification(errorMessage, 'error');
         }
     };
@@ -391,9 +382,9 @@ const ExperimentsList: React.FC = () => {
         return (
             <>
                 {/* Обычные параметры в две колонки */}
-                <div className="grid grid-cols-2 gap-2 items-center pb-2 border-b-2 border-black">
+                <div className="grid grid-cols-2 gap-2 items-center pb-2 border-b-2 border-rgb(209 209 209)">
                     {normalParams.map(([key, value]) => (
-                        <div key={prefix + key} className="flex justify-between items-center border-b last:border-b-0 p-2 bg-gray-300 rounded-lg">
+                        <div key={prefix + key} className="flex justify-between items-center border-b p-2 bg-gray-300 rounded-lg">
                             <span className="font-semibold ">{translate(key)}:</span>
                             <span>{translate(value as string)}</span>
                         </div>
@@ -403,19 +394,19 @@ const ExperimentsList: React.FC = () => {
                 {/* Группировка функций и kwargs */}
                 <div className="mt-2">
                     {Array.from(functionParams.entries()).map(([key, { function: func, kwargs }]) => (
-                        <div key={key} className="grid grid-cols-2 gap-2 p-2 border-b last:border-b-0 mb-2 bg-gray-200 rounded-lg items-center">
-                            <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2 pr-2 h-full">
-                                <span className="font-semibold">{translate(key)}:</span>
-                                <span>{func as string}</span>
+                        <div key={key} className="grid grid-cols-2 gap-2 mb-2 rounded-lg items-center">
+                            <div className="flex justify-between bg-gray-300 rounded-lg items-center p-2 h-full">
+                                <span className="font-semibold mr-1">{translate(key)}:</span>
+                                <span className="flex items-center text-right">{translate(func as string)}</span>
                             </div>
                             {kwargs && (
                                 <div className="bg-gray-300 rounded-lg items-center p-2 h-full">
                                     <span className="font-semibold">{translate(key.replace('_function', '_kwargs'))}:</span>
                                     <div className="ml-1 grid grid-cols-2 gap-2 border-gray-300">
                                         {Object.entries(kwargs).map(([kwargKey, kwargValue]) => (
-                                            <div key={kwargKey} className="flex justify-between bg-gray-400 rounded-lg p-1 items-center pr-2">
-                                                <span className="font-semibold">{translate(kwargKey)}:</span>
-                                                <span>{kwargValue as string}</span>
+                                            <div key={kwargKey} className="flex justify-between bg-gray-200 rounded-lg p-1 items-center pr-2">
+                                                <span className="font-semibold ">{translate(kwargKey)}:</span>
+                                                <span>{translate(kwargValue as string)}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -428,6 +419,20 @@ const ExperimentsList: React.FC = () => {
         );
     };
 
+    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
+    useEffect(() => {
+        const fetchTranslate = async () =>{
+            try {
+                fetchModelTranslations()
+                    .then(translations => setModelTranslations(translations));
+            } catch (error: any) {
+                showNotification(`Ошибка при открытии эксперимента: ${error.response?.data?.detail}` || 'Ошибка при создании эксперимента', 'error');
+                return {};
+            }
+        }
+        fetchTranslate();
+    }, []);
+    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
 
     return (
         <div className="container mx-auto p-0">

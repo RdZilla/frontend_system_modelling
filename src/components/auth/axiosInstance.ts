@@ -25,7 +25,6 @@ const refreshToken = async () => {
         localStorage.setItem('accessToken', newAccessToken);
         return newAccessToken;
     } catch (error) {
-        console.error('Error refreshing token:', error);
         throw error;
     }
 };

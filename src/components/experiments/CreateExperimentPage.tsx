@@ -6,19 +6,25 @@ import {fetchModelTranslations} from "../../api/getTranslation.tsx";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const CreateExperimentPage: React.FC = () => {
-    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
-    useEffect(() => {
-        fetchModelTranslations()
-            .then(translations => setModelTranslations(translations));
-    }, []);
-    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
-
     const [name, setName] = useState('');
     const [configs, setConfigs] = useState<any[]>([]);
-    const [error, setError] = useState('');
     const [options, setOptions] = useState<any>(null);
     const [algorithms, setAlgorithms] = useState<any>(null);
     const navigate = useNavigate();
+
+    const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
+    const showNotification = (message: string, type: 'success' | 'error') => {
+        setNotification({message, type});
+
+        // Автоматическое скрытие уведомления через 5 секунд
+        setTimeout(() => {
+            setNotification(null);
+        }, 5000);
+    };
+
+    const [modelTranslations, setModelTranslations] = useState<Record<string, string>>({});
+    const [existingConfigs, setExistingConfigs] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchOptions = async () => {
@@ -29,18 +35,50 @@ const CreateExperimentPage: React.FC = () => {
                 ]);
                 setAlgorithms(algorithmsResponse.data);
                 setOptions(functionsResponse.data);
-            } catch (err) {
-                console.error("Ошибка при загрузке данных:", err);
-                setError('Ошибка при загрузке данных');
+            } catch (error: any) {
+                showNotification(`Ошибка при загрузке данных ${error.response?.data?.detail}`, 'error');
             }
         };
+        const fetchTranslate = async () => {
+            try {
+                fetchModelTranslations()
+                    .then(translations => setModelTranslations(translations));
+            } catch (error: any) {
+                showNotification(`Ошибка при открытии эксперимента: ${error.response?.data?.detail}` || 'Ошибка при создании эксперимента', 'error');
+                return {};
+            }
+        }
+        const fetchExistingConfigs = async () => {
+            try {
+                const params: { [key: string]: any } = {
+                    "page_size": 0,
+                };
+
+                const response = await axiosInstance.get(`${API_URL}/task_module/task_config`,
+                    {params}
+                );
+                setExistingConfigs(response.data.results);
+            } catch (error: any) {
+                showNotification(`Ошибка при загрузке конфигураций: ${error.response?.data?.detail}`, 'error');
+            }
+        };
+
+        fetchTranslate();
         fetchOptions();
+        fetchExistingConfigs();
     }, []);
+
+    const translate = (key: string) => modelTranslations[key] || key.replace(/_/g, ' ');
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
+        if (!name || !name.trim()) {
+            showNotification("Название эксперимента должно быть заполнено", 'error');
+            return;
+        }
+
         if (configs.some(config => !config.name.trim())) {
-            setError('Название конфигурации должно быть заполнено для каждой конфигурации.');
+            showNotification('Название конфигурации должно быть заполнено для каждой конфигурации', 'error');
             return;
         }
         try {
@@ -51,7 +89,7 @@ const CreateExperimentPage: React.FC = () => {
             const experimentId = response.data.detail;
             navigate(`/experiment/${experimentId}`);
         } catch (error: any) {
-            setError(`Ошибка при создании эксперимента: ${error.response?.data?.detail}` || 'Ошибка при создании эксперимента');
+            showNotification(`Ошибка при создании эксперимента: ${error.response?.data?.detail}` || 'Ошибка при создании эксперимента', 'error');
         }
     };
 
@@ -68,7 +106,6 @@ const CreateExperimentPage: React.FC = () => {
                 ...updatedConfigs[index].config[kwargsField],
                 [param]: value
             };
-            console.log(`Изменён параметр ${param} для ${field}:`, updatedConfigs[index].config[kwargsField]);
         } else {
             // Обновляем обычные поля и сбрасываем *_kwargs только при смене функции
             if (field.endsWith('_function') && updatedConfigs[index].config[field] !== value) {
@@ -92,8 +129,23 @@ const CreateExperimentPage: React.FC = () => {
 
     return (
         <div className="container mx-auto p-4">
+            {notification && (
+                <div
+                    className={`fixed top-4 right-4 p-4 rounded-lg text-white flex items-center justify-between shadow-lg transition-opacity duration-300 ${
+                        notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                    role="alert"
+                >
+                    <span>{notification.message}</span>
+                    <button
+                        className="ml-3 bg-red-500 hover:bg-red-800 font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-md transition-all text-white"
+                        onClick={() => setNotification(null)}  // Закрыть уведомление по клику
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
             <h1 className="text-2xl font-bold mb-4">Создание нового эксперимента</h1>
-            {error && <div className="text-red-500 mb-4">{error}</div>}
 
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
@@ -103,10 +155,29 @@ const CreateExperimentPage: React.FC = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="border p-2 rounded w-full"
-                        required
+                        placeholder="Введите название эксперимента"
                     />
                 </div>
 
+                <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">Выберите существующую конфигурацию или создайте
+                        новую</label>
+                    <select
+                        className="border p-2 rounded w-full"
+                        onChange={(e) => {
+                            const selectedConfig = existingConfigs.find(config => config.id.toString() === e.target.value);
+                            if (selectedConfig) {
+                                setConfigs([...configs, {name: selectedConfig.name, config: selectedConfig.config}]);
+                            }
+                        }}
+                    >
+                        <option value="">-- Выберите конфигурацию --</option>
+                        {existingConfigs.map((config) => (
+                            <option key={config.id} value={config.id}>{config.name}</option>
+                        ))}
+                    </select>
+
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                     {configs.map((config, index) => (
                         <div key={index} className="border p-4 rounded-lg relative">
@@ -120,7 +191,7 @@ const CreateExperimentPage: React.FC = () => {
 
                             <input
                                 type="text"
-                                placeholder="Название конфигурации"
+                                placeholder="Введите название конфигурации"
                                 value={config.name}
                                 onChange={(e) => updateConfigName(index, e.target.value)}
                                 className="border p-2 rounded w-full mb-4"
@@ -219,8 +290,6 @@ const CreateExperimentPage: React.FC = () => {
                                         const functionType = field.replace('_function', '_functions');
                                         const selectedFunction = config.config[field];
                                         const params = options[functionType]?.[selectedFunction];
-
-                                        console.log(`Параметры для ${selectedFunction}:`, params);  // Для отладки
 
                                         return params && params.length > 0 ? (
                                             <div className="mt-2">
