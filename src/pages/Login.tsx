@@ -51,6 +51,19 @@ const Login: React.FC = () => {
                 <button type="submit" className="bg-blue-500 text-white w-full py-2 rounded hover:bg-blue-600">
                     Войти
                 </button>
+
+                <div className="mt-4 text-center">
+                    <p>
+                        Нет аккаунта?{' '}
+                        <button
+                            type="button"
+                            onClick={() => navigate('/register')}
+                            className="text-blue-500 hover:text-blue-700"
+                        >
+                            Регистрация
+                        </button>
+                    </p>
+                </div>
             </form>
         </div>
     );

@@ -8,12 +8,14 @@ import CreateExperiment from "./pages/CreateExperiment.tsx";
 import ExperimentDetails from "./pages/ExperimentDetails.tsx";
 import UserConfigPage from "./pages/UserConfigPage.tsx";
 import CustomFunctionsPage from "./pages/CustomFunctionsPage.tsx";
+import Register from "./pages/Register.tsx";
 
 const App: React.FC = () => {
     return (
         <Router>
             <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
                 <Route
                     path="/dashboard"
                     element={
