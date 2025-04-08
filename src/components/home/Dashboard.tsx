@@ -219,7 +219,7 @@ const Dashboard: React.FC = () => {
                             <div key={experiment.id} className="border p-4 rounded-lg shadow-md">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center space-x-2">
-                                        <h2 className="text-xl font-semibold">{experiment.id} / {experiment.name}</h2>
+                                        <h2 className="text-xl font-semibold">{experiment.id} | {experiment.name} | {translate(experiment.status)}</h2>
                                     </div>
                                     <div className="flex space-x-4">
                                         <Link
@@ -249,7 +249,7 @@ const Dashboard: React.FC = () => {
                             <div key={config.id} className="border p-4 rounded-lg shadow-md">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center space-x-2">
-                                        <h2 className="text-xl font-semibold">{config.id} / {config.name}</h2>
+                                        <h2 className="text-xl font-semibold">{config.id} | {config.name}</h2>
                                     </div>
                                     <div className="flex space-x-4">
                                         <Link
@@ -280,7 +280,7 @@ const Dashboard: React.FC = () => {
                         <div key={task.id} className="border p-4 rounded-lg shadow-md">
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center space-x-2">
-                                    <h2 className="text-xl font-semibold">{task.id} / {translate(task.status)}</h2>
+                                    <h2 className="text-xl font-semibold">{task.id} | {translate(task.status)}</h2>
                                 </div>
                                 <div className="flex space-x-4">
                                     <Link

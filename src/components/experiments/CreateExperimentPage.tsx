@@ -281,7 +281,7 @@ const CreateExperimentPage: React.FC = () => {
                                     >
                                         <option value="">Выберите {label.toLowerCase()}</option>
                                         {funcOptions.map((option: string) => (
-                                            <option key={option} value={option}>{option}</option>
+                                            <option key={option} value={option}>{translate(option)}</option>
                                         ))}
                                     </select>
 
@@ -295,11 +295,11 @@ const CreateExperimentPage: React.FC = () => {
                                             <div className="mt-2">
                                                 {params.map((param: string) => (
                                                     <div key={param} className="mb-2">
-                                                        <label className="block text-sm mb-1">{param}</label>
+                                                        <label className="block text-sm mb-1">{translate(param)}</label>
                                                         <input
                                                             type="text"
                                                             className="border p-2 rounded w-full"
-                                                            placeholder={param}
+                                                            placeholder={translate(param)}
                                                             value={config.config[`${field.replace('_function', '_kwargs')}`]?.[param] || ''}  // Безопасное значение
                                                             onChange={(e) =>
                                                                 updateConfig(index, field, e.target.value, param)  // Исправленный вызов

@@ -512,7 +512,7 @@ const ExperimentsList: React.FC = () => {
                                             checked={selectedExperiments.has(experiment.id)}
                                             onChange={() => toggleExperimentSelection(experiment.id)}
                                         />
-                                        <h2 className="text-xl font-semibold">{experiment.id} / {experiment.name}</h2>
+                                        <h2 className="text-xl font-semibold">{experiment.id} | {experiment.name}</h2>
                                     </div>
                                     <div className="flex space-x-4">
                                         <button

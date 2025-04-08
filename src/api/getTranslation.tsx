@@ -1,19 +1,19 @@
+import axiosInstance from "../components/auth/axiosInstance.ts";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 
 export const fetchModelTranslations = async (): Promise<Record<string, string>> => {
     try {
-        const response = await fetch(`${API_URL}/task_module/translations`);
-        if (!response.ok) {
-            throw new Error(`Ошибка загрузки: ${response.status}`);
-        }
-        const data: Record<string, string> = await response.json();
+        const response = await axiosInstance.get(`${API_URL}/task_module/translations`);
+        const data: Record<string, string> = response.data;
 
         // Преобразование полученных данных в нужный формат
         return Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, String(value)])
         );
-    } catch (error) {
-        throw error;
+    } catch (error: any) {
+        const errorMessage = `Ошибка при загрузке переводов: ${error.response?.data?.detail}` || 'Ошибка при загрузке переводов.';
+        throw new Error(errorMessage);
     }
 };
