@@ -145,7 +145,7 @@ const Register: React.FC = () => {
 
                         {/* Кнопка отправки кода или таймер */}
                         {cooldown > 0 ? (
-                            <p className="text-gray-500 text-sm">Повторная отправка через {cooldown} сек.</p>
+                            <p className="text-gray-500 text-sm text-center">Повторная отправка через {cooldown} сек.</p>
                         ) : (
                             <button
                                 onClick={handleSendCode}
