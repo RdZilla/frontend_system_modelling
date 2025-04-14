@@ -99,23 +99,34 @@ const CreateExperimentPage: React.FC = () => {
     const updateConfig = (index: number, field: string, value: any, param?: string) => {
         const updatedConfigs = [...configs];
 
+        // Проверка, можно ли преобразовать в дробное число (запятую заменим на точку, но оставим как строку)
+        const parsedValue = typeof value === "string" ? value.replace(',', '.') : value;
+        const isFloatConvertible = !isNaN(parseFloat(parsedValue)) && isFinite(parsedValue as any);
+
+        const finalValue = isFloatConvertible ? parsedValue : value;
+
         if (param) {
-            // Обновляем параметр внутри *_kwargs
-            const kwargsField = `${field.replace('_function', '_kwargs')}`;
+            const kwargsField = field.replace('_function', '_kwargs');
             updatedConfigs[index].config[kwargsField] = {
                 ...updatedConfigs[index].config[kwargsField],
-                [param]: value
+                [param]: finalValue
             };
         } else {
-            // Обновляем обычные поля и сбрасываем *_kwargs только при смене функции
-            if (field.endsWith('_function') && updatedConfigs[index].config[field] !== value) {
-                updatedConfigs[index].config[`${field.replace('_function', '_kwargs')}`] = {};  // Сброс параметров для новой функции
+            if (field === "algorithm") {
+                updatedConfigs[index].config = {};
             }
-            updatedConfigs[index].config[field] = value;
+
+            if (field.endsWith('_function') && updatedConfigs[index].config[field] !== value) {
+                const kwargsField = field.replace('_function', '_kwargs');
+                updatedConfigs[index].config[kwargsField] = {}; // Сброс параметров для новой функции
+            }
+
+            updatedConfigs[index].config[field] = finalValue;
         }
 
         setConfigs(updatedConfigs);
     };
+
 
     const updateConfigName = (index: number, value: string) => {
         const updatedConfigs = [...configs];
@@ -205,7 +216,7 @@ const CreateExperimentPage: React.FC = () => {
                                         onChange={(e) => updateConfig(index, 'algorithm', e.target.value)
                                         }
                                     >
-                                        <option value=""> Выберите алгоритм</option>
+                                        <option value="">— — —</option>
                                         {
                                             Object.keys(algorithms).map((algorithm) => (
                                                 <option key={algorithm}
@@ -215,7 +226,8 @@ const CreateExperimentPage: React.FC = () => {
                                     </select>
                                 </div>
                             )}
-                            {config.config.algorithm && algorithms[config.config.algorithm]
+                            {
+                                config.config.algorithm && algorithms[config.config.algorithm]
                                 ?.filter((param: string) => ![
                                     'algorithm',
                                     'crossover_function',
@@ -233,7 +245,8 @@ const CreateExperimentPage: React.FC = () => {
                                             onChange={(e) => updateConfig(index, param, e.target.value)}
                                         />
                                     </div>
-                                ))}
+                                ))
+                            }
 
                             {[
                                 {
@@ -279,7 +292,7 @@ const CreateExperimentPage: React.FC = () => {
                                         value={config.config[field]}
                                         onChange={(e) => updateConfig(index, field, e.target.value)}
                                     >
-                                        <option value="">Выберите {label.toLowerCase()}</option>
+                                        <option value="">— — —</option>
                                         {funcOptions.map((option: string) => (
                                             <option key={option} value={option}>{translate(option)}</option>
                                         ))}

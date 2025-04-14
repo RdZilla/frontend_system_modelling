@@ -24,6 +24,9 @@ const Navbar: React.FC = () => {
                 <Link to="/function" className="text-gray-700 hover:text-blue-500">
                     Пользовательские функции
                 </Link>
+                <Link to="/" className="text-gray-700 hover:text-blue-500">
+                    Справка
+                </Link>
             </div>
             <div className="flex items-center space-x-4">
                 <span className="text-gray-700">{fullName}</span>

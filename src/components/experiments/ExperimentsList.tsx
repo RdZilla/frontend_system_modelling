@@ -281,7 +281,7 @@ const ExperimentsList: React.FC = () => {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'created':
-                return 'bg-gray-300';
+                return 'bg-gray-400';
             case 'started':
                 return 'bg-green-500';
             case 'finished':
@@ -512,9 +512,12 @@ const ExperimentsList: React.FC = () => {
                                             checked={selectedExperiments.has(experiment.id)}
                                             onChange={() => toggleExperimentSelection(experiment.id)}
                                         />
-                                        <h2 className="text-xl font-semibold">{experiment.id} | {experiment.name}</h2>
+                                        <h2 className="text-xl font-semibold">{experiment.id} | {experiment.name} </h2>
                                     </div>
                                     <div className="flex space-x-4">
+                                        <p className={`flex justify-center items-center font-semibold text-white ${getStatusColor(experiment.status)} rounded p-1 mr-6 w-40`}>
+                                            Статус: {translate(experiment.status)}
+                                        </p>
                                         <button
                                             onClick={() => toggleExperimentExpansion(experiment.id)}
                                             className="text-blue-500"
@@ -523,7 +526,7 @@ const ExperimentsList: React.FC = () => {
                                         </button>
                                         <Link
                                             to={`/experiment/${experiment.id}`}
-                                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                            className="bg-blue-500 text-white p-2 text-center inline-block font-semibold rounded hover:bg-blue-600"
                                         >
                                             Перейти к карточке
                                         </Link>
@@ -532,7 +535,6 @@ const ExperimentsList: React.FC = () => {
 
                                 {expandedExperiments.has(experiment.id) && (
                                     <div className="mt-2">
-                                        <p className={`text-white ${getStatusColor(experiment.status)} p-2 inline-block rounded`}>Статус: {translate(experiment.status)}</p>
                                         <p className="text-gray-400">Создан: {new Date(experiment.created_at).toLocaleString()}</p>
                                     </div>
                                 )}
@@ -546,7 +548,9 @@ const ExperimentsList: React.FC = () => {
                                                     <div className="flex justify-between">
                                                         <span>Задача ID: {task.id}</span>
                                                         <span
-                                                            className={`text-white ${getStatusColor(task.status)} p-2 inline-block rounded`}>{translate(task.status)}</span>
+                                                            className={`flex justify-center items-center font-semibold text-white ${getStatusColor(experiment.status)} rounded p-1 w-40`}>
+                                                            Статус: {translate(task.status)}
+                                                        </span>
                                                         <button
                                                             onClick={() => toggleTaskExpansion(task.id)}
                                                             className="text-blue-500"

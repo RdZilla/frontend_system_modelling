@@ -53,6 +53,7 @@ const ExperimentDetailsPage: React.FC = () => {
     const [newName, setNewName] = useState<string>('');
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+    const [selectedOption, setSelectedOption] = useState("csv_all");
 
     const showNotification = (message: string, type: 'success' | 'error') => {
         setNotification({message, type});
@@ -256,7 +257,7 @@ const ExperimentDetailsPage: React.FC = () => {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'created':
-                return 'bg-gray-300';
+                return 'bg-gray-400';
             case 'started':
                 return 'bg-green-500';
             case 'finished':
@@ -386,9 +387,17 @@ const ExperimentDetailsPage: React.FC = () => {
         return <div>Загрузка...</div>;
     }
 
-    const ExportButton = ({experimentId, taskId}: { experimentId: number; taskId: number }) => {
-        const [selectedOption, setSelectedOption] = useState("csv_all");
-
+    const ExportButton = ({
+                              experimentId,
+                              taskId,
+                              selectedOption,
+                              setSelectedOption
+                          }: {
+        experimentId: number;
+        taskId: number;
+        selectedOption: string;
+        setSelectedOption: (value: string) => void;
+    }) => {
         const exportOptions = [
             {value: "png_all", label: "Выгрузить график всех результатов в PNG"},
             {value: "png_final", label: "Выгрузить график финального результата в PNG"},
@@ -543,7 +552,12 @@ const ExperimentDetailsPage: React.FC = () => {
                                     </button>
                                 ) : null}
                                 {task.status === 'finished' ? (
-                                    <ExportButton experimentId={experiment.id} taskId={task.id}/>
+                                    <ExportButton
+                                        experimentId={experiment.id}
+                                        taskId={task.id}
+                                        selectedOption={selectedOption}
+                                        setSelectedOption={setSelectedOption}
+                                    />
                                 ) : null}
                             </div>
                         </div>
